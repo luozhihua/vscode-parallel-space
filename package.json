@@ -1,0 +1,117 @@
+{
+  "name": "parallel-editor",
+  "displayName": "Parallel Components Editor",
+  "description":
+    "Edit component’s parts(tamplate/script/style) use 3 columns view, It’s layout looks like CodePen/JSFiddle/JSBin, used for Angular components, Vue TypeScript components or other mvc/mvvm components which itself’s templates/scripts/styles parts each as single file wrappered with in the same folder.",
+  "version": "1.0.0",
+  "publisher": "luozhihua",
+  "author": "Colin <mail@luozhihua.com>",
+  "engines": {
+    "vscode": "^1.22.0"
+  },
+  "categories": ["Other"],
+  "activationEvents": ["*"],
+  "main": "./out/extension",
+  "contributes": {
+    "configuration": {
+      "type": "object",
+      "title": "Parallel Editor",
+      "properties": {
+        "parallel.cacheDirectory": {
+          "type": "string",
+          "default": [".parallel"],
+          "description":
+            "A directory under the current VSCode Workspace use for saving Parallel Editor's cache files, temp files.",
+          "scope": "resource"
+        },
+        "parallel.scriptExtnames": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "description":
+            "A set of extnames used for detect component's script file, The extnames you setted will be merged into the built-ins and deduplicated, built-in script extnames: ['.js', '.jsx', '.ts', '.tsx', '.mjs', '.es', '.es6', '.coffee', '.dart'].",
+          "scope": "resource"
+        },
+        "parallel.styleExtnames": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "description":
+            "A set of extnames used for detect component's style file, The extnames you setted will be merged into the built-ins and deduplicated, built-in style extnames: ['.css', '.scss', '.sass', '.less', '.styl', '.stylus'].",
+          "scope": "resource"
+        },
+        "parallel.templateExtnames": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "description":
+            "A set of extnames used for detect component's template file, The extnames you setted will be merged into the built-ins and deduplicated, built-in template extnames: ['.jade', '.pug', '.tpl', '.html', '.htm', '.xhtml', '.xml', '.mustache', '.ejs', '.def', '.dot', '.jst', '.handlebars', '.hbs', '.haml', '.dust', '.njk'].",
+          "scope": "resource"
+        },
+        "parallel.columnsOrder": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": ["script", "template", "style"],
+          "description":
+            "Adjust script, template, style panels layout order in the editor.",
+          "scope": "resource"
+        },
+        "parallel.includeDirectories": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": ["/components", "/views", "/pages", "/packages"],
+          "description":
+            "Only enable multipe column edit for those paths and sub paths.",
+          "scope": "resource"
+        },
+        "(TODO)parallel.splitSingleFileComponentOnEditing": {
+          "type": "boolean",
+          "default": true,
+          "description":
+            "whether auto split templates/scripts/style tags in multiple columns view for a single-file component when open it.",
+          "scope": "resource"
+        },
+        "(TODO)parallel.singleFileComponentExtnames": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "description":
+            "enable split mode for Single-file Component which with those file extnames. built-in extnames: ['.vue', '.we', '.weex'].",
+          "scope": "resource"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "postinstall": "node ./node_modules/vscode/bin/install",
+    "test": "npm run compile && node ./node_modules/vscode/bin/test"
+  },
+  "devDependencies": {
+    "@types/lodash": "^4.14.107",
+    "@types/micromatch": "^3.1.0",
+    "@types/mocha": "^2.2.42",
+    "@types/node": "^7.0.43",
+    "tslint": "^5.8.0",
+    "typescript": "^2.6.1",
+    "vscode": "^1.1.6"
+  },
+  "dependencies": {
+    "lodash": "^4.17.5",
+    "micromatch": "^3.1.10"
+  }
+}
