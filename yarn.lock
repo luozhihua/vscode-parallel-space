@@ -6,6 +6,10 @@
   version "2.3.0"
   resolved "https://registry.npmjs.org/@types/braces/-/braces-2.3.0.tgz#d00ec0a76562b2acb6f29330be33a093e33ed25c"
 
+"@types/klaw-sync@^2.0.1":
+  version "2.0.1"
+  resolved "https://npm.applinks.io:443/@types%2fklaw-sync/-/klaw-sync-2.0.1.tgz#e76329dd3b332fb5e2fc4c823c9192935f18e85a"
+
 "@types/lodash@^4.14.107":
   version "4.14.107"
   resolved "https://registry.npmjs.org/@types/lodash/-/lodash-4.14.107.tgz#b2d2ae3958bfb8ff828495cbe12214af9e4d035e"
@@ -796,7 +800,7 @@ glogg@^1.0.0:
   dependencies:
     sparkles "^1.0.0"
 
-graceful-fs@^4.0.0, graceful-fs@^4.1.2:
+graceful-fs@^4.0.0, graceful-fs@^4.1.11, graceful-fs@^4.1.2:
   version "4.1.11"
   resolved "http://139.196.216.117:4873/graceful-fs/-/graceful-fs-4.1.11.tgz#0e8bdfe4d1ddb8854d64e04ea7c00e2a026e5658"
 
@@ -1292,6 +1296,12 @@ kind-of@^5.0.0:
 kind-of@^6.0.0, kind-of@^6.0.2:
   version "6.0.2"
   resolved "http://139.196.216.117:4873/kind-of/-/kind-of-6.0.2.tgz#01146b36a6218e64e58f3a8d66de5d7fc6f6d051"
+
+klaw-sync@^3.0.2:
+  version "3.0.2"
+  resolved "http://139.196.216.117:4873/klaw-sync/-/klaw-sync-3.0.2.tgz#bf3a5ca463af5aec007201dbe8be7088ef29d067"
+  dependencies:
+    graceful-fs "^4.1.11"
 
 lazystream@^1.0.0:
   version "1.0.0"
@@ -2168,9 +2178,9 @@ tweetnacl@^0.14.3, tweetnacl@~0.14.0:
   version "0.14.5"
   resolved "http://139.196.216.117:4873/tweetnacl/-/tweetnacl-0.14.5.tgz#5ae68177f192d4456269d108afa93ff8743f4f64"
 
-typescript@^2.6.1:
-  version "2.8.1"
-  resolved "http://139.196.216.117:4873/typescript/-/typescript-2.8.1.tgz#6160e4f8f195d5ba81d4876f9c0cc1fbc0820624"
+typescript@^2.8.3:
+  version "2.8.3"
+  resolved "https://npm.applinks.io:443/typescript/-/typescript-2.8.3.tgz#5d817f9b6f31bb871835f4edf0089f21abe6c170"
 
 union-value@^1.0.0:
   version "1.0.0"

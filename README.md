@@ -9,15 +9,51 @@
 1.  Automatically open scripts, templates, style files of the same component in multipe columns;
 2.  Supported a variety of template, style, script extnames;
 
-* _Scripts_: `.js`, `.jsx`, `.ts`, `.tsx`, `.mjs`, `.es`, `.es6`, `.coffee`, `.dart`
-* _Styles_: `.css`, `.scss`, `.sass`, `.less`, `.styl`, `.stylus`
-* _Templates_: `.html`, `.htm`, `.xhtml`, `.ejs`, `.jade`, `.pug`, `.hbs`, `.handlebars`, `.haml`, `.tpl`, `.mustache`, `.def`, `.dot`, `.jst`, `.dust`, `.njk`
+    > * _Scripts_: `.js`, `.jsx`, `.ts`, `.tsx`, `.mjs`, `.es`, `.es6`, `.coffee`, `.dart`
+    > * _Styles_: `.css`, `.scss`, `.sass`, `.less`, `.styl`, `.stylus`
+    > * _Templates_: `.html`, `.htm`, `.xhtml`, `.ejs`, `.jade`, `.pug`, `.hbs`, `.handlebars`, `.haml`, `.tpl`, `.mustache`, `.def`, `.dot`, `.jst`, `.dust`, `.njk`
 
 3.  Automatically identifies the component's constituent files.
 4.  Support to adjust the order of `scripts`, `templates`, and `style` columns in `Extension Settings`.
 5.  When we cannot identify which files belong to the same component, we will ask you to confirm the correct file that makes up the component and remember your choices.
 6.  Remember component's part files status.
 7.  (developing) Auto split `single-file component` parts into each column on editting, and merged they are together on save.
+
+---
+
+### Parallel How to detecting part files of components?
+
+1.  Same named files will be treated as a set of files for the same component.
+    ```
+    ┣━ Components
+      ├┈ index.ts
+      ├┈ common.ts
+      ├┈ ...
+      ├┈ base-button.ts       ↘
+      ├┈ base-button.scss     → BaseButtom component
+      ├┈ base-button.html     ↗
+      ├┈ ...
+      ├┈ Tab.ts               ↘
+      ├┈ tab.scss             → Tab component (Case insensitive)
+      └┈ tab.html             ↗
+    ```
+1.  In the folder only contains one script file, one style file, one template file will be treated as a component.
+
+    ```
+    ┣━ Components
+      ├┈ index.ts
+      └┈ Icon
+        ├┈ index.ts           ↘
+        ├┈ icon.html          → Icon component
+        └┈ icon.scss          ↗
+      └┈ Avatar
+        ├┈ index.tsx          ↘
+        └┈ style.scss         → Icon component (no single template file, it's included in .tsx use JSX format.)
+      └┈ Foo
+        └┈ ...
+      └┈ Bar
+        └┈ ...
+    ```
 
 ---
 
@@ -85,8 +121,8 @@
   >   {
   >     // ...
   >     parallel.styleExtnames: [
-  >       '!.sass', // excluded built-in extname
-  >       '.component.sass', // includes
+  >       '!.sass', // excluded built-in .sass extname
+  >       '.component.sass', // includes `*.component.sass`
   >     ],
   >     // ...
   >   }
@@ -116,8 +152,8 @@
   >   {
   >     // ...
   >     parallel.templateExtnames: [
-  >       '!.html', // excluded built-in extname
-  >       '.component.html', // includes
+  >       '!.html', // excluded built-in .html extname
+  >       '.component.html', // includes `*.component.html`
   >     ],
   >     // ...
   >   }

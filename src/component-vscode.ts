@@ -1,18 +1,20 @@
 /*
  * @Author: Colin Luo
  * @Date: 2018-04-17 06:30:48
- * @Last Modified by:   Colin Luo
- * @Last Modified time: 2018-04-17 06:30:48
+ * @Last Modified by: Colin Luo <mail@luozhihua.com>
+ * @Last Modified time: 2018-04-22 07:00:15
  */
 import { QuickPickItem, TextEditor, Uri, window } from 'vscode';
-import Component, { ComponentFiles } from './component';
+import Component from './libs/component';
 import { config } from './config';
+import { DocumentType as DocType } from './libs/document';
+import { MemberFiles } from './libs/member';
 
 interface ColumnsOrder {
   [key: string]: number;
-  script: number;
-  style: number;
-  template: number;
+  [DocType.SCRIPT]: number;
+  [DocType.STYLE]: number;
+  [DocType.TEMPLATE]: number;
 }
 
 export default class VscodeComponent extends Component {
@@ -21,7 +23,11 @@ export default class VscodeComponent extends Component {
   }
 
   getColumnsOrder(): ColumnsOrder {
-    let order: ColumnsOrder = { script: 1, style: 2, template: 3 };
+    let order: ColumnsOrder = {
+      [DocType.SCRIPT]: 1,
+      [DocType.STYLE]: 2,
+      [DocType.TEMPLATE]: 3,
+    };
     let configOrder: string[] = [...config.columnsOrder];
 
     configOrder.forEach((item: string, index: number) => {
@@ -36,22 +42,42 @@ export default class VscodeComponent extends Component {
    * @memberof VscodeComponent
    */
   open(): void {
-    let files: ComponentFiles = this.getComponentFiles();
+    let files: MemberFiles = this.member.getMemberFiles();
     let order = this.getColumnsOrder();
+    let maxColumn = Object.keys(files).reduce((result, type) => {
+      let items = files[type] as string[];
+
+      return result + (items.length > 0 ? 1 : 0);
+    }, 0);
 
     // 打开脚本文件
-    if (files.script && files.script.length > 0) {
-      this.openFileInColumn(files.script, order.script);
+    let scriptFiles = files[DocType.SCRIPT];
+    if (scriptFiles && scriptFiles.length > 0) {
+      this.openFileInColumn(
+        DocType.SCRIPT.toLowerCase(),
+        scriptFiles,
+        Math.min(maxColumn, order[DocType.SCRIPT]),
+      );
     }
 
+    let templateFiles = files[DocType.TEMPLATE];
     // 打开模板文件
-    if (files.template && files.template.length > 0) {
-      this.openFileInColumn(files.template, order.template);
+    if (templateFiles && templateFiles.length > 0) {
+      this.openFileInColumn(
+        DocType.TEMPLATE.toLowerCase(),
+        templateFiles,
+        Math.min(maxColumn, order[DocType.TEMPLATE]),
+      );
     }
 
     // 打开样式文件
-    if (files.style && files.style.length > 0) {
-      this.openFileInColumn(files.style, order.style);
+    let styleFiles = files[DocType.STYLE];
+    if (styleFiles && styleFiles.length > 0) {
+      this.openFileInColumn(
+        DocType.STYLE.toLowerCase(),
+        styleFiles,
+        Math.min(maxColumn, order[DocType.STYLE]),
+      );
     }
   }
 
@@ -62,7 +88,11 @@ export default class VscodeComponent extends Component {
    * @param {number} columnIndex
    * @memberof VscodeComponent
    */
-  private openFileInColumn(files: string[], columnIndex: number): void {
+  private openFileInColumn(
+    type: string,
+    files: string[],
+    columnIndex: number,
+  ): void {
     if (files.length === 1) {
       window
         .showTextDocument(Uri.parse('file://' + files[0]), {
@@ -70,7 +100,7 @@ export default class VscodeComponent extends Component {
           viewColumn: columnIndex,
         })
         .then((textEditor: TextEditor) => {
-          // textEditor.show(columnIndex);
+          console.log('opened');
         });
     } else {
       let filenames: QuickPickItem[] = [...files].map(
@@ -84,8 +114,12 @@ export default class VscodeComponent extends Component {
           return item;
         },
       );
+      let options = {
+        canPickMany: true,
+        placeHolder: `Please choose ${type} part for this component`,
+      };
 
-      window.showQuickPick(filenames).then(picked => {
+      window.showQuickPick(filenames, options).then(picked => {
         console.log(picked);
       });
     }

@@ -1,27 +1,35 @@
 /*
  * @Author: Colin Luo
  * @Date: 2018-04-17 06:30:34
- * @Last Modified by:   Colin Luo
- * @Last Modified time: 2018-04-17 06:30:34
+ * @Last Modified by: Colin Luo <mail@luozhihua.com>
+ * @Last Modified time: 2018-04-22 04:34:31
  */
 import { workspace } from 'vscode';
+// import * as mm from 'micromatch';
+// import * as walker from 'klaw-sync';
 
-export interface Extnames {
-  [index: string]: ReadonlyArray<string>;
-  style: ReadonlyArray<string>;
-  script: ReadonlyArray<string>;
-  template: ReadonlyArray<string>;
+type RA = ReadonlyArray<string>;
+export interface Exts {
+  [index: string]: RA;
+  style: RA;
+  script: RA;
+  template: RA;
 }
 
-const DEF_DIRS: ReadonlyArray<string> = [
-  '/components',
-  '/views',
-  '/pages',
-  '/packages',
+const DEF_SCRIPT_DIR: RA = [
+  'script',
+  'controller',
+  'ctrl',
+  'javascript',
+  'typescript',
+  'coffeescript',
 ];
-const DEF_SFC_EXTS: ReadonlyArray<string> = ['.vue', '.we', '.weex'];
-const DEF_COL_ORDER: ReadonlyArray<string> = ['script', 'template', 'style'];
-const DEF_EXTS: Extnames = {
+const DEF_STYLE_DIR: RA = ['style'];
+const DEF_TEMPLATE_DIR: RA = ['template', 'view', 'page'];
+const DEF_COMPONENT_DIR: RA = ['component', 'view', 'page', 'src/app'];
+const DEF_SFC_EXTS: RA = ['.vue', '.we', '.weex'];
+const DEF_COL_ORDER: RA = ['script', 'template', 'style'];
+const DEF_EXTS: Exts = {
   style: ['.css', '.scss', '.sass', '.less', '.styl', '.stylus'],
   script: [
     '.js',
@@ -55,43 +63,83 @@ const DEF_EXTS: Extnames = {
 export default class Config {
   constructor() {}
 
-  public readonly defaultColumnsOrder: ReadonlyArray<string> = DEF_COL_ORDER;
-  public readonly defaultExtnames: Extnames = DEF_EXTS;
-  public readonly defaultDirectories: ReadonlyArray<string> = DEF_DIRS;
-  public readonly defaultSFCExtnames: ReadonlyArray<string> = DEF_SFC_EXTS;
+  public readonly defaultColumnsOrder: RA = DEF_COL_ORDER;
+  public readonly defaultExts: Exts = DEF_EXTS;
+  public readonly defaultScriptDir: RA = DEF_SCRIPT_DIR;
+  public readonly defaultStyleDir: RA = DEF_STYLE_DIR;
+  public readonly defaultTemplateDir: RA = DEF_TEMPLATE_DIR;
+  public readonly defaultComponentDir: RA = DEF_COMPONENT_DIR;
+  public readonly defaultSFCExts: RA = DEF_SFC_EXTS;
 
-  public get cacheDirectory(): string {
-    let { cacheDirectory } = this.getWorkspaceConfig();
-
-    return cacheDirectory || '.parallel';
-  }
-
-  public get extnames(): Extnames {
-    let extnames: Extnames = {
-      style: this.getStyleExtnames(),
-      script: this.getScriptExtnames(),
-      template: this.getTemplateExtnames(),
+  public get exts(): Exts {
+    let extnames: Exts = {
+      style: this.styleExts,
+      script: this.scriptExts,
+      template: this.templateExts,
     };
 
     return extnames;
   }
 
-  public get styleExtnames(): string[] {
-    return this.getStyleExtnames();
+  public get scriptDirs() {
+    let { scriptFoldersForCrossMode } = this.getWorkspaceConfig();
+    let exts: string[] = this.scriptExts.reduce((res, cur) => {
+      return res.concat(cur.substr(1) as never);
+    }, []);
+
+    return this.mergePatterns(DEF_SCRIPT_DIR, [
+      ...scriptFoldersForCrossMode,
+      ...exts,
+    ]);
   }
 
-  public get scriptExtnames(): string[] {
-    return this.getScriptExtnames();
+  public get styleDirs() {
+    let { styleFoldersForCrossMode } = this.getWorkspaceConfig();
+    let exts: string[] = this.styleExts.reduce((res, cur) => {
+      return res.concat(cur.substr(1) as never);
+    }, []);
+
+    return this.mergePatterns(DEF_STYLE_DIR, [
+      ...styleFoldersForCrossMode,
+      ...exts,
+    ]);
   }
 
-  public get templateExtnames(): string[] {
-    return this.getTemplateExtnames();
+  public get templateDirs() {
+    let { templateFoldersForCrossMode } = this.getWorkspaceConfig();
+    let exts: string[] = this.templateExts.reduce((res, cur) => {
+      return res.concat(cur.substr(1) as never);
+    }, []);
+
+    return this.mergePatterns(DEF_TEMPLATE_DIR, [
+      ...templateFoldersForCrossMode,
+      ...exts,
+    ]);
   }
 
-  public get directories(): string[] {
-    let { includeDirectories } = this.getWorkspaceConfig();
+  public get componentDirs() {
+    let { componentFolders } = this.getWorkspaceConfig();
 
-    return this.cleanPatterns([...DEF_DIRS, ...includeDirectories]);
+    return this.mergePatterns(DEF_COMPONENT_DIR, componentFolders);
+  }
+
+  public get styleExts(): string[] {
+    let { styleExts } = this.getWorkspaceConfig();
+
+    return this.mergePatterns(DEF_EXTS.style as string[], styleExts);
+    // return this.getStyleExts();
+  }
+
+  public get scriptExts(): string[] {
+    let { scriptExts } = this.getWorkspaceConfig();
+
+    return this.mergePatterns(DEF_EXTS.script as string[], scriptExts);
+  }
+
+  public get templateExts(): string[] {
+    let { templateExts } = this.getWorkspaceConfig();
+
+    return this.mergePatterns(DEF_EXTS.template as string[], templateExts);
   }
 
   public get isSplitSFC(): boolean {
@@ -100,13 +148,13 @@ export default class Config {
     return !!splitSingleFileComponentOnEditing;
   }
 
-  public get sfcExtnames(): string[] {
-    let { singleFileComponentExtnames } = this.getWorkspaceConfig();
+  public get sfcExts(): string[] {
+    let { singleFileComponentExts } = this.getWorkspaceConfig();
 
-    return this.cleanPatterns([
-      ...DEF_SFC_EXTS,
-      ...singleFileComponentExtnames,
-    ]);
+    return this.mergePatterns(
+      DEF_SFC_EXTS as string[],
+      singleFileComponentExts,
+    );
   }
 
   public get columnsOrder(): string[] {
@@ -127,33 +175,28 @@ export default class Config {
     return workspace.getConfiguration('parallel');
   }
 
-  protected getStyleExtnames() {
-    let { styleExtnames } = this.getWorkspaceConfig();
-
-    return this.cleanPatterns([...DEF_EXTS.style, ...styleExtnames]);
-  }
-
-  protected getScriptExtnames() {
-    let { scriptExtnames } = this.getWorkspaceConfig();
-
-    return this.cleanPatterns([...DEF_EXTS.script, ...scriptExtnames]);
-  }
-
-  protected getTemplateExtnames() {
-    let { templateExtnames } = this.getWorkspaceConfig();
-
-    return this.cleanPatterns([...DEF_EXTS.template, ...templateExtnames]);
-  }
-
   /**
    * @description 对匹配规则去重和排除
    * @static
+   * @param {string[]} defaults
    * @param {string[]} patterns
    * @returns {string[]}
    * @memberof Config
    */
-  public cleanPatterns(patterns: string[]): string[] {
-    return patterns
+  public mergePatterns(
+    defaults: string[] | RA,
+    patterns: string[] | RA,
+  ): string[] {
+    let allPatterns: string[];
+
+    // 是否排除所有内置匹配规则
+    if (patterns.includes('!built-ins')) {
+      allPatterns = patterns as string[];
+    } else {
+      allPatterns = [...defaults, ...patterns];
+    }
+
+    return allPatterns
       .sort() // put ! ahead
       .reverse() // put ! at the last
       .reduce((cleared, pattern) => {
