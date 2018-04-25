@@ -1,166 +1,205 @@
 /*
  * @Author: Colin Luo
  * @Date: 2018-04-17 06:30:10
- * @Last Modified by: Colin Luo
- * @Last Modified time: 2018-04-21 23:12:44
+ * @Last Modified by: Colin Luo <mail@luozhihua.com>
+ * @Last Modified time: 2018-04-25 04:27:49
  */
-
-import {
-  workspace,
-  window,
-  Disposable,
-  commands,
-  TextEditor,
-  TextDocument,
-} from 'vscode';
-import Component from '../component-vscode';
-import { MemberFiles } from './member';
-import { config } from '../config';
+import { EventEmitter } from 'events';
 import * as mm from 'micromatch';
-import Document, { DocumentType as DocType } from './document';
+import { config } from '../config';
+import Component from './component';
+import Member, { TYPES } from './member-base';
+import Document from './document';
 
-export default class Parallel {
-  private disposable: Disposable;
+const a: xx = {
+  x: '2',
+};
+
+export default class Parallel extends EventEmitter {
   private components: Map<string, Component> = new Map();
 
   constructor() {
-    let subscriptions: Disposable[] = [];
-
-    window.onDidChangeActiveTextEditor(this.onActive, this, subscriptions);
-    workspace.onDidOpenTextDocument(this.onOpen, this, subscriptions);
-    workspace.onDidCloseTextDocument(this.onClose, this, subscriptions);
-    commands.executeCommand('workbench.action.close');
-
-    this.disposable = Disposable.from(...subscriptions);
+    super();
+    this.initEvents();
   }
 
+  private activatedComponent: Component | undefined;
+  // private closeQueue: Promise<any>[] = [];
+
   dispose() {
-    this.disposable.dispose();
+    this.components.clear();
+  }
+
+  private initEvents(): void {
+    this.on('active', this.onActive);
+    this.on('open', this.onOpen);
+    this.on('close', this.onClose);
+  }
+
+  private activate(component: Component): void {
+    if (this.activatedComponent) {
+      this.activatedComponent.activated = false;
+    }
+
+    this.activatedComponent = component;
+    component.activated = true;
+  }
+
+  public getOpenedComponent(path: string) {
+    let id = Document.createId(path);
+    let type = Member.getTypeByPath(path);
+    let component = this.components.get(id);
+
+    if (component) {
+      return component[type].textDocument;
+    }
   }
 
   /**
    * @description 文件被激活为当前正在编辑状态时触发的事件方法
-   * @param {TextEditor} [textEditor]
-   * @memberof Parallel
+   * @param {string} path
    * @event onDidChangeActiveTextEditor
    */
-  onActive(textEditor?: TextEditor) {
-    if (textEditor !== undefined) {
-      let uri: string = textEditor.document.uri.toString();
+  private onActive(root: string, path: string) {
+    let type = Member.getTypeByPath(path);
+    let activated = this.activatedComponent;
 
-      this.showComponent(uri);
+    if (activated && activated[type] && activated[type].path !== path) {
+      setTimeout(() => {
+        this.openComponent(root, path);
+      }, 100);
     }
   }
 
   /**
    * @description 打开文件时触发的事件方法
-   * @param {TextEditor} [textEditor]
-   * @memberof Parallel
+   * @param {string} path
    * @event onDidChangeActiveTextEditor
    */
-  onOpen(textDocument: TextDocument) {
-    this.openComponent(textDocument.uri.toString());
-  }
-
-  /**
-   * @description 关闭文件时触发的事件方法
-   * @param {TextEditor} [textEditor]
-   * @memberof Parallel
-   * @event onDidChangeActiveTextEditor
-   */
-  onClose(textDocument: TextDocument) {
-    let uri = textDocument.uri.toString().replace(/^file:\/\//, '');
-    let id = Document.createId(uri);
-    let component = this.components.get(id);
-
+  private onOpen(root: string, path: string) {
+    let component = this.openComponent(root, path);
     if (component) {
-      let files: MemberFiles = component.componentFiles;
-      let scriptId: string;
-      let styleId: string;
-      let templateId: string;
-
-      let scriptFiles = files[DocType.SCRIPT];
-      if (scriptFiles) {
-        scriptId = Document.createId(scriptFiles[0] as string);
-        this.components.delete(scriptId);
-      }
-
-      let styleFiles = files[DocType.STYLE];
-      if (styleFiles) {
-        styleId = Document.createId(styleFiles[0] || '');
-        this.components.delete(styleId);
-      }
-
-      let templateFiles = files[DocType.TEMPLATE];
-      if (templateFiles) {
-        templateId = Document.createId(templateFiles[0] || '');
-        this.components.delete(templateId);
-      }
+      this.rememberComponent(component);
     }
   }
 
   /**
-   * @description 显示组件相关的文件
-   * @param {Uri} uri
-   * @memberof Parallel
+   * @description 关闭文件时触发的事件方法
+   * @param {string} path
+   * @event onDidChangeActiveTextEditor
    */
-  showComponent(uri: string): Component | undefined {
-    let id: string = Document.createId(uri.replace(/^file:\/\//, ''));
+  private onClose(root: string, path: string) {
+    let id = Document.createId(path);
     let component = this.components.get(id);
-    let confDirs = [
-      ...config.scriptDirs,
-      ...config.styleDirs,
-      ...config.templateDirs,
-      ...config.componentDirs,
-    ];
-    let dirs = confDirs.map(dir => dir.replace(/^[\/\\]/, ''));
-    let patterns = config.mergePatterns([], confDirs);
-    let matches = mm.match([uri], `**/{${patterns.join(',')}}{s,}/**/*.*`, {
+    if (component) {
+      let type = Member.getTypeByPath(path);
+      let document: Document = component[type];
+
+      if (document) {
+        // document.isClosed = true;
+      }
+    }
+  }
+  /**
+   * @description 打开组件相关的文件
+   * @param {string} path
+   */
+  rememberComponent(component: Component) {
+    TYPES.forEach((type: string) => {
+      if (component) {
+        let document: Document = component[type];
+
+        if (document) {
+          this.components.set(document.id, component);
+        }
+      }
+    });
+  }
+
+  /**
+   * @description 显示组件相关的文件
+   * @param {Uri} path
+   */
+  openComponent(root: string, path: string): Component | undefined {
+    let id: string = Document.createId(path);
+    let { scriptDirs, styleDirs, templateDirs, componentDirs } = config;
+    let conf = [...scriptDirs, ...styleDirs, ...templateDirs, ...componentDirs];
+    let patterns = config.mergePatterns([], conf);
+    let matches = mm.match([path], `**/{${patterns.join(',')}}{s,}/**/*.*`, {
       nocase: true,
     });
 
     if (matches && matches.length > 0) {
+      let component = this.components.get(id);
+
       if (!component) {
-        component = new Component(uri);
+        component = new Component(root, path);
+        component.on(
+          'openDocument',
+          (document: Document, columnIndex: number = 1): void => {
+            this.emit('openDocument', document, columnIndex);
+          },
+        );
       }
 
-      component.open();
+      this.activate(component);
+      component.open(path);
 
       return component;
     }
   }
 
-  /**
-   * @description 打开组件相关的文件
-   * @param {any} uri
-   * @memberof Parallel
-   */
-  openComponent(uri: string) {
-    let component = this.showComponent(uri);
+  static isFileSupported(root: string, path: string) {
+    let type = Member.getTypeByPath(path);
+    let {
+      componentDirs,
+      scriptDirs,
+      styleDirs,
+      templateDirs,
+      scriptExts,
+      styleExts,
+      templateExts,
+      sfcExts,
+      columnOrders,
+    } = config;
 
-    if (component) {
-      let files: MemberFiles = component.getMemberFiles();
-      let scriptId: string;
-      let styleId: string;
-      let templateId: string;
-
-      let scripts = files[DocType.SCRIPT];
-      if (scripts) {
-        scriptId = Document.createId(scripts[0] || '');
-        this.components.set(scriptId, component);
-      }
-
-      let styles = files[DocType.STYLE];
-      if (styles) {
-        styleId = Document.createId(styles[0] || '');
-        this.components.set(styleId, component);
-      }
-
-      let templates = files[DocType.TEMPLATE];
-      if (templates) {
-        templateId = Document.createId(templates[0] || '');
-        this.components.set(templateId, component);
-      }
+    // 没有开启对应的列
+    if (!columnOrders.includes(type)) {
+      return false;
     }
+
+    let dirs = config
+      .mergePatterns(componentDirs, [
+        ...scriptDirs,
+        ...styleDirs,
+        ...templateDirs,
+      ])
+      .join(',');
+    let exts = config
+      .mergePatterns(sfcExts, [...scriptExts, ...styleExts, ...templateExts])
+      .join(',');
+    let excludes = ['node_modules', 'build', 'dist', 'release'].join(',');
+    let inludeOptions = {
+      nocase: true,
+      dot: false,
+    };
+    let excludeOptions = {
+      nocase: true,
+      dot: true,
+    };
+
+    return (
+      !mm.isMatch(path, `${root}/**/{${excludes}}{s,}/**`, excludeOptions) &&
+      mm.isMatch(path, `${root}/**/{${dirs}}{s,}/**/*{${exts}}`, inludeOptions)
+    );
+  }
+
+  static isSplitMode(path: string): boolean {
+    let { isSplitSFC, sfcExts } = config;
+    let isSFC = mm.isMatch(path, `*{${sfcExts.join(',')}}`, {
+      matchBase: true,
+    });
+
+    return isSFC && isSplitSFC;
   }
 }

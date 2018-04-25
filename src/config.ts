@@ -2,18 +2,24 @@
  * @Author: Colin Luo
  * @Date: 2018-04-17 06:30:34
  * @Last Modified by: Colin Luo <mail@luozhihua.com>
- * @Last Modified time: 2018-04-22 04:34:31
+ * @Last Modified time: 2018-04-25 04:21:30
  */
 import { workspace } from 'vscode';
-// import * as mm from 'micromatch';
-// import * as walker from 'klaw-sync';
 
+export type DocType = 'script' | 'style' | 'template';
+export enum DocTypes {
+  SCRIPT = 'script',
+  STYLE = 'style',
+  TEMPLATE = 'template',
+}
+export const { SCRIPT, STYLE, TEMPLATE } = DocTypes;
 type RA = ReadonlyArray<string>;
 export interface Exts {
-  [index: string]: RA;
-  style: RA;
-  script: RA;
-  template: RA;
+  [key: string]: RA | undefined;
+  [STYLE]: RA;
+  [SCRIPT]: RA;
+  [TEMPLATE]: RA;
+  sfc?: RA;
 }
 
 const DEF_SCRIPT_DIR: RA = [
@@ -26,12 +32,18 @@ const DEF_SCRIPT_DIR: RA = [
 ];
 const DEF_STYLE_DIR: RA = ['style'];
 const DEF_TEMPLATE_DIR: RA = ['template', 'view', 'page'];
-const DEF_COMPONENT_DIR: RA = ['component', 'view', 'page', 'src/app'];
-const DEF_SFC_EXTS: RA = ['.vue', '.we', '.weex'];
+const DEF_COMPONENT_DIR: RA = [
+  'component',
+  'view',
+  'page',
+  'src/app',
+  '.vscodeparallel',
+];
+const DEF_SFC_EXTS: RA = ['.vue', '.we', '.weex', '!.css.vue'];
 const DEF_COL_ORDER: RA = ['script', 'template', 'style'];
 const DEF_EXTS: Exts = {
-  style: ['.css', '.scss', '.sass', '.less', '.styl', '.stylus'],
-  script: [
+  [STYLE]: ['.css', '.scss', '.sass', '.less', '.styl', '.stylus', '.css.vue'],
+  [SCRIPT]: [
     '.js',
     '.jsx',
     '.ts',
@@ -42,7 +54,7 @@ const DEF_EXTS: Exts = {
     '.coffee',
     '.dart',
   ],
-  template: [
+  [TEMPLATE]: [
     '.jade',
     '.pug',
     '.tpl',
@@ -72,13 +84,12 @@ export default class Config {
   public readonly defaultSFCExts: RA = DEF_SFC_EXTS;
 
   public get exts(): Exts {
-    let extnames: Exts = {
+    return {
       style: this.styleExts,
       script: this.scriptExts,
       template: this.templateExts,
-    };
-
-    return extnames;
+      sfc: this.sfcExts,
+    } as Exts;
   }
 
   public get scriptDirs() {
@@ -157,16 +168,16 @@ export default class Config {
     );
   }
 
-  public get columnsOrder(): string[] {
+  public get columnOrders(): string[] {
     let { columnsOrder } = this.getWorkspaceConfig();
     let defaultOrder = config.defaultColumnsOrder;
     let order = [...columnsOrder];
 
-    defaultOrder.forEach(item => {
-      if (!columnsOrder.includes(item)) {
-        order.push(item);
-      }
-    });
+    // defaultOrder.forEach(item => {
+    //   if (!columnsOrder.includes(item)) {
+    //     order.push(item);
+    //   }
+    // });
 
     return order;
   }
@@ -201,6 +212,7 @@ export default class Config {
       .reverse() // put ! at the last
       .reduce((cleared, pattern) => {
         if (pattern.startsWith('!')) {
+          cleared.push(pattern);
           pattern = pattern.substr(1);
           return cleared.filter(item => item !== pattern);
         } else {

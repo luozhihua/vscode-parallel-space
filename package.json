@@ -22,6 +22,7 @@
   "categories": ["Language Packs", "Formatters"],
   "activationEvents": ["*"],
   "main": "./out/extension",
+  "typings": "src/typings/index.d.ts",
   "contributes": {
     "configuration": {
       "type": "object",
@@ -136,14 +137,14 @@
             "Enable and adjust script, template, style panels’s layout order in the editor.",
           "scope": "resource"
         },
-        "(TODO)parallel.splitSingleFileComponentOnEditing": {
+        "parallel.splitSingleFileComponentOnEditing": {
           "type": "boolean",
           "default": true,
           "description":
             "whether auto split templates/scripts/style tags in multiple columns view for a single-file component when open it.",
           "scope": "resource"
         },
-        "(TODO)parallel.singleFileComponentExts": {
+        "parallel.singleFileComponentExts": {
           "type": "array",
           "items": {
             "type": "string"
@@ -164,8 +165,12 @@
     "test": "npm run compile && node ./node_modules/vscode/bin/test"
   },
   "devDependencies": {
+    "@types/commondir": "^1.0.2",
+    "@types/jsdom": "^11.0.5",
+    "@types/klaw-sync": "^2.0.1",
     "@types/lodash": "^4.14.107",
     "@types/micromatch": "^3.1.0",
+    "@types/mkdirp": "^0.5.2",
     "@types/mocha": "^5.2.0",
     "@types/node": "^9.6.6",
     "tslint": "^5.9.1",
@@ -173,9 +178,11 @@
     "vscode": "^1.1.14"
   },
   "dependencies": {
-    "@types/klaw-sync": "^2.0.1",
+    "commondir": "^1.0.1",
+    "jsdom": "^11.8.0",
     "klaw-sync": "^3.0.2",
     "lodash": "^4.17.5",
-    "micromatch": "^3.1.10"
+    "micromatch": "^3.1.10",
+    "mkdirp": "^0.5.1"
   }
 }

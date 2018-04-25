@@ -2,86 +2,103 @@
  * @Author: Colin Luo
  * @Date: 2018-04-17 06:30:39
  * @Last Modified by: Colin Luo <mail@luozhihua.com>
- * @Last Modified time: 2018-04-22 06:41:24
+ * @Last Modified time: 2018-04-25 04:17:38
  */
-// import * as mm from 'micromatch';
 import { EventEmitter as Events } from 'events';
-import { default as Document, DocumentType as DocType } from './document';
-import { MemberFiles } from './member';
-import Member from './member.sibling';
+import { default as Document } from './document';
+import { config, DocType, SCRIPT, STYLE, TEMPLATE } from '../config';
+import { TYPES } from './member-base';
+import Member from './member';
 
-export default abstract class Component extends Events {
-  constructor(uri: string) {
+interface ColumnsOrder {
+  [key: string]: number;
+  [SCRIPT]: number;
+  [STYLE]: number;
+  [TEMPLATE]: number;
+}
+
+export default interface Component {
+  [key: string]: any;
+  SCRIPT: Document;
+  STYLE: Document;
+  TEMPLATE: Document;
+}
+
+export default class Component extends Events {
+  constructor(root: string, path: string) {
     super();
-    this.uri = uri.replace(/^file:\/\//, '');
-    this.member = new Member(this.uri);
-    this.member.on('resolved', () => {
-      this.init();
-      this.emit('ready');
-    });
+    this.path = path;
+    this.member = new Member(root, this.path);
+    this.init();
   }
 
-  abstract open(): void;
-
-  private init(): void {
-    let { script, style, template } = this.member;
-
-    if (script) {
-      this.script = new Document(DocType.SCRIPT, script);
-    }
-
-    if (style) {
-      this.style = new Document(DocType.STYLE, style);
-    }
-
-    if (template) {
-      this.template = new Document(DocType.TEMPLATE, template);
-    }
-  }
-
-  /**
-   * @description 表示组件位置的URI
-   * @private
-   * @type {string}
-   * @memberof Component
-   */
-  protected readonly uri: string;
+  protected readonly path: string;
   protected member: Member;
   public script: Document | undefined;
   public style: Document | undefined;
   public template: Document | undefined;
+  public activated: boolean = false;
 
-  public componentFiles: MemberFiles = {};
+  private init(): void {
+    TYPES.forEach((type: DocType) => {
+      let { member, path } = this;
+
+      if (member.documents) {
+        this[type] = member.documents[type];
+      } else {
+        let file = member[type];
+
+        if (file) {
+          this[type] = new Document(type, file, path === file);
+        }
+      }
+    });
+  }
+
   /**
-   * @description 返回构成组件的各类型文件（包含脚本、样式、模板文件）
-   * @returns {MemberFiles}
-   * @memberof Component
+   * @description 打开组件所属的模板、样式、脚本文件
+   * @memberof VscodeComponent
    */
-  public getMemberFiles(): MemberFiles {
-    let files: MemberFiles = this.componentFiles;
+  open(entry: string): void {
+    let columns: string[] = [...config.columnOrders];
+    let order = this.getColumnOrders();
 
-    if (!files.completed) {
-      if (Member.isScript(this.uri)) {
-        files.script = [this.uri];
-        files.style = this.member.getStyle();
-        files.template = this.member.getTemplate();
+    columns.forEach((type: string) => {
+      let document: Document = this[type];
+
+      if (document) {
+        this.emit('openDocument', document, order[type]);
       }
+    });
+  }
 
-      if (Member.isTemplate(this.uri)) {
-        files.template = [this.uri];
-        files.style = this.member.getStyle();
-        files.script = this.member.getScript();
+  public getColumnOrders(): ColumnsOrder {
+    let configOrder: string[] = [...config.columnOrders];
+    let order: ColumnsOrder = {
+      [SCRIPT]: 1,
+      [STYLE]: 2,
+      [TEMPLATE]: 3,
+    };
+
+    configOrder.forEach((type: string, index: number) => {
+      order[type] = index + 1;
+    });
+
+    return order;
+  }
+
+  public getOpenedMembers() {
+    let members: Document[] = [];
+
+    TYPES.forEach(type => {
+      let document = this[type];
+      let textDoc = document ? document.textDocument : undefined;
+
+      if (document && textDoc && !textDoc.isClosed) {
+        members.push(document);
       }
+    });
 
-      if (Member.isStyle(this.uri)) {
-        files.template = [this.uri];
-        files.template = this.member.getTemplate();
-        files.script = this.member.getScript();
-      }
-
-      files.completed = true;
-    }
-
-    return files;
+    return members;
   }
 }
