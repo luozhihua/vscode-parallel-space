@@ -2,13 +2,12 @@
  * @Author: Colin Luo
  * @Date: 2018-04-17 06:30:39
  * @Last Modified by: Colin Luo <mail@luozhihua.com>
- * @Last Modified time: 2018-04-25 04:17:38
+ * @Last Modified time: 2018-04-26 01:46:21
  */
-import { EventEmitter as Events } from 'events';
 import { default as Document } from './document';
-import { config, DocType, SCRIPT, STYLE, TEMPLATE } from '../config';
-import { TYPES } from './member-base';
+import { config, DocType, SCRIPT, STYLE, TEMPLATE, TYPES } from '../config';
 import Member from './member';
+import event from '../event';
 
 interface ColumnsOrder {
   [key: string]: number;
@@ -24,9 +23,8 @@ export default interface Component {
   TEMPLATE: Document;
 }
 
-export default class Component extends Events {
+export default class Component {
   constructor(root: string, path: string) {
-    super();
     this.path = path;
     this.member = new Member(root, this.path);
     this.init();
@@ -67,7 +65,7 @@ export default class Component extends Events {
       let document: Document = this[type];
 
       if (document) {
-        this.emit('openDocument', document, order[type]);
+        event.emit('openDocument', document, order[type]);
       }
     });
   }

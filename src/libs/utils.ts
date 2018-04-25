@@ -1,4 +1,5 @@
 import * as path from 'path';
+import * as crypto from 'crypto';
 
 export interface IPath {
   ext: string;
@@ -26,4 +27,11 @@ export class IPath {
 
     return uriParts;
   }
+}
+
+export function createId(str: string): string {
+  return crypto
+    .createHash('md5')
+    .update(str)
+    .digest('hex');
 }

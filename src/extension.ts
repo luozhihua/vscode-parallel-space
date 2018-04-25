@@ -2,7 +2,7 @@
  * @Author: Colin Luo
  * @Date: 2018-04-17 06:30:10
  * @Last Modified by: Colin Luo <mail@luozhihua.com>
- * @Last Modified time: 2018-04-25 13:07:56
+ * @Last Modified time: 2018-04-26 00:44:03
  */
 
 import {
@@ -13,11 +13,13 @@ import {
   commands,
   TextEditor,
   TextDocument,
+  TextDocumentChangeEvent,
   Uri,
 } from 'vscode';
 
 import Parallel from './libs/parallel';
 import Document from './libs/document';
+import { createId } from './libs/utils';
 import event from './event';
 
 let disposable: Disposable;
@@ -26,7 +28,7 @@ export function activate(context: ExtensionContext) {
   let subscriptions: Disposable[] = [];
   let parallel = new Parallel();
 
-  parallel.on(
+  event.on(
     'openDocument',
     async (document: Document, columnIndex: number = 1): Promise<void> => {
       let visibles = window.visibleTextEditors;
@@ -60,7 +62,7 @@ export function activate(context: ExtensionContext) {
 
       // 检测文件是否被Parallel所支持
       if (root && Parallel.isFileSupported(root.uri.path, uri.path)) {
-        parallel.emit('close', root.uri.path, uri.path);
+        event.emit('close', root.uri.path, uri.path);
       }
     },
     parallel,
@@ -75,7 +77,7 @@ export function activate(context: ExtensionContext) {
 
       // 检测文件是否被Parallel所支持
       if (root && Parallel.isFileSupported(root.uri.path, uri.path)) {
-        parallel.emit('open', root.uri.path, uri.path);
+        event.emit('open', root.uri.path, uri.path);
       }
     },
     parallel,
@@ -88,12 +90,13 @@ export function activate(context: ExtensionContext) {
       if (editor !== undefined) {
         let uri = editor.document.uri;
         let root = workspace.getWorkspaceFolder(uri);
-        let opened = parallel.getOpenedComponent(uri.path);
-        let isSplitMode = Parallel.isSplitMode(uri.path);
+        let openedDoc = parallel.getOpenedDocment(uri.path);
+        // let isSplitMode = Parallel.isSplitMode(uri.path);
 
         if (
-          isSplitMode ||
-          (opened && opened.viewColumn !== editor.viewColumn)
+          // isSplitMode ||
+          openedDoc &&
+          openedDoc.viewColumn !== editor.viewColumn
         ) {
           commands.executeCommand('workbench.action.closeActiveEditor');
         }
@@ -101,7 +104,7 @@ export function activate(context: ExtensionContext) {
         setTimeout(() => {
           // 检测文件是否被Parallel所支持
           if (root && Parallel.isFileSupported(root.uri.path, uri.path)) {
-            parallel.emit('active', root.uri.path, uri.path);
+            event.emit('active', root.uri.path, uri.path);
           }
         }, 100);
       }
@@ -114,6 +117,18 @@ export function activate(context: ExtensionContext) {
     console.log(editors);
   }, parallel);
 
+  workspace.onDidChangeTextDocument((event: TextDocumentChangeEvent) => {
+    console.log(event);
+  });
+
+  workspace.onDidSaveTextDocument((doc: TextDocument) => {
+    console.log(event);
+    let path = doc.uri.path;
+    let id = createId(path);
+
+    event.emit(`save-${id}`, path);
+  });
+
   commands.executeCommand('workbench.action.close');
   disposable = Disposable.from(...subscriptions);
   context.subscriptions.push(parallel);
@@ -121,4 +136,5 @@ export function activate(context: ExtensionContext) {
 
 export function deactivate() {
   disposable.dispose();
+  event.removeAllListeners();
 }

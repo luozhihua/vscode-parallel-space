@@ -2,7 +2,7 @@
  * @Author: Colin Luo
  * @Date: 2018-04-17 06:30:34
  * @Last Modified by: Colin Luo <mail@luozhihua.com>
- * @Last Modified time: 2018-04-25 04:21:30
+ * @Last Modified time: 2018-04-26 00:14:27
  */
 import { workspace } from 'vscode';
 
@@ -13,6 +13,7 @@ export enum DocTypes {
   TEMPLATE = 'template',
 }
 export const { SCRIPT, STYLE, TEMPLATE } = DocTypes;
+export const TYPES: DocType[] = [SCRIPT, STYLE, TEMPLATE];
 type RA = ReadonlyArray<string>;
 export interface Exts {
   [key: string]: RA | undefined;
@@ -212,7 +213,7 @@ export default class Config {
       .reverse() // put ! at the last
       .reduce((cleared, pattern) => {
         if (pattern.startsWith('!')) {
-          cleared.push(pattern);
+          cleared.push(pattern as never);
           pattern = pattern.substr(1);
           return cleared.filter(item => item !== pattern);
         } else {

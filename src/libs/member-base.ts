@@ -1,11 +1,8 @@
 // import * as fs from 'fs';
-import { EventEmitter as Events } from 'events';
 import * as mm from 'micromatch';
-import { config, DocType, SCRIPT, STYLE, TEMPLATE } from '../config';
+import { config, DocType, SCRIPT, STYLE, TEMPLATE, TYPES } from '../config';
 import { IPath } from './utils';
 import Document from './document';
-
-export const TYPES = [SCRIPT, STYLE, TEMPLATE];
 
 export interface MemberFiles {
   [key: string]: any;
@@ -23,7 +20,7 @@ export interface DocumentMap {
   [TEMPLATE]: Document | undefined;
 }
 
-export default abstract class Member extends Events {
+export default abstract class Member {
   public [SCRIPT]: string | undefined;
   public [STYLE]: string | undefined;
   public [TEMPLATE]: string | undefined;
@@ -34,7 +31,6 @@ export default abstract class Member extends Events {
   protected abstract getCandidates(): MemberFiles;
 
   constructor(root: string, path: string) {
-    super();
     this.path = path;
     this.root = root;
     this.files = this.resolveFiles();

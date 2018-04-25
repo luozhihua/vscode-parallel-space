@@ -2,16 +2,15 @@
  * @Author: Colin Luo
  * @Date: 2018-04-21 14:39:06
  * @Last Modified by: Colin Luo <mail@luozhihua.com>
- * @Last Modified time: 2018-04-25 12:54:33
+ * @Last Modified time: 2018-04-26 01:43:29
  */
 import * as fs from 'fs';
 import * as jsdom from 'jsdom';
 import * as mkdirp from 'mkdirp';
-import { SCRIPT, STYLE, TEMPLATE, DocType, DocTypes } from '../config';
-import { IPath } from './utils';
-import Document from './document';
-import { EventEmitter } from 'events';
+import { SCRIPT, STYLE, TEMPLATE, TYPES, DocType, DocTypes } from '../config';
+import { IPath, createId } from './utils';
 import { LangID } from './member';
+import event from '../event';
 
 export interface LangID {
   [key: string]: string;
@@ -45,7 +44,11 @@ export const langs: LangID = {
   stylesheet: 'css',
 };
 
-export default class VueSpliter extends EventEmitter {
+export default interface VueSpliter {
+  [key: string]: any;
+}
+
+export default class VueSpliter {
   public [SCRIPT]: string;
   public [STYLE]: string;
   public [TEMPLATE]: string;
@@ -53,10 +56,11 @@ export default class VueSpliter extends EventEmitter {
   private readonly root: string;
   private readonly path: string;
   private STYLESHEET: string = 'stylesheet';
-  public parts: VueParts = { [STYLE]: [] };
+  public parts: VueParts = {
+    [STYLE]: [],
+  };
 
   constructor(root: string, path: string) {
-    super();
     this.root = root;
     this.path = path;
     this.tempDir = this.mkdir();
@@ -66,22 +70,15 @@ export default class VueSpliter extends EventEmitter {
   }
 
   private mkdir() {
-    let id = Document.createId(this.path);
+    let id = createId(this.path);
     let path = `${this.root}/.vscodeparallel/components/${id}`;
 
     mkdirp.sync(path);
     return path;
   }
 
-  private mockStyleTag(content: string): string {
-    content = content.replace(/\<style/g, '<stylesheet');
-    content = content.replace(/\<\/style\>/g, '</stylesheet>');
-
-    return content;
-  }
-
   private createDOMFromPath(path: string): HTMLCollection {
-    let componentContent = this.mockStyleTag(fs.readFileSync(path, 'utf8'));
+    let componentContent = fs.readFileSync(path, 'utf8');
     let dom = new jsdom.JSDOM(`<body>${componentContent}</body>`);
     let document: any = dom.window.document;
     let body: HTMLBodyElement = document.body;
@@ -121,30 +118,67 @@ export default class VueSpliter extends EventEmitter {
     let ipath: IPath = IPath.parse(this.path);
     let dir = this.tempDir;
 
-    Object.keys(DocTypes).forEach((type): void => {
+    [SCRIPT, STYLE, TEMPLATE].forEach((type): void => {
       let part = this.parts[type];
+      let filepath: string | undefined;
 
       if (Array.isArray(part)) {
-        let filepath = `${dir}/${ipath.base}.css.vue`;
         let styles: string[] = [];
 
+        filepath = `${dir}/${ipath.base}.css.vue`;
         part.forEach(slice => {
           let { startWrapper, content, endWrapper } = slice;
 
           styles.push(startWrapper, content, endWrapper);
+          slice.path = filepath || '';
         });
+
         this.writeFileSync(filepath, styles.join('\n\n\r\r'));
       } else if (part) {
-        let filepath = `${dir}/${ipath.base}.${part.ext.replace(/^\./, '')}`;
+        filepath = `${dir}/${ipath.base}.${part.ext.replace(/^\./, '')}`;
 
         this.writeFileSync(filepath, part.content);
-      } else if (!part) {
-        this.writeFileSync(`${dir}/${ipath.base}.${langs[type]}`, '');
+        part.path = filepath || '';
+      }
+
+      if (filepath) {
+        this[type] = filepath;
       }
     });
   }
 
   private writeFileSync(filepath: string, content: string) {
+    let id = createId(filepath);
+
     fs.writeFileSync(filepath, content);
+
+    event.on(`save-${id}`, this.merge.bind(this));
+  }
+
+  /**
+   * @description Merge sub files into Single-file Component
+   */
+  private merge(): void {
+    let parts: string[] = [];
+
+    [SCRIPT, STYLE, TEMPLATE].forEach((type: DocType) => {
+      let part = this.parts[type];
+
+      if (part && (<VueSlice>part).type === type) {
+        parts.push(
+          [
+            (<VueSlice>part).startWrapper,
+            fs.readFileSync((<VueSlice>part).path, 'utf-8'),
+            (<VueSlice>part).endWrapper,
+          ].join('\n'),
+        );
+      } else if (Array.isArray(part)) {
+        part.forEach((slice: VueSlice) => {
+          parts.push(fs.readFileSync(slice.path, 'utf-8'));
+        });
+      }
+    });
+
+    fs.writeFileSync(this.path, parts.join('\n\n'));
   }
 }

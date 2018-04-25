@@ -1,19 +1,18 @@
 <script>
 export default {
   data() {
-    return {};
+    return { z: 2338088 };
   },
 
   mounted() {
     console.log('mounted!');
   },
 };
-
 </script>
 
 <style lang="less">
   .dialog {
-    width: 100px;
+    width: 500px;
 
     header {
       height: 40px;
@@ -31,14 +30,14 @@ export default {
   }
 </style>
 
-
 <template>
+
   <div class="dialog">
     <header>header</header>
     <main>
       <p>asd</p>
       <ul>
-        <li>100000000000</li>
+        <li>1</li>
         <li>2</li>
         <li>3</li>
         <li>4</li>

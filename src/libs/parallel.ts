@@ -2,24 +2,24 @@
  * @Author: Colin Luo
  * @Date: 2018-04-17 06:30:10
  * @Last Modified by: Colin Luo <mail@luozhihua.com>
- * @Last Modified time: 2018-04-25 04:27:49
+ * @Last Modified time: 2018-04-26 00:43:13
  */
-import { EventEmitter } from 'events';
 import * as mm from 'micromatch';
-import { config } from '../config';
+import { config, TYPES } from '../config';
+import { createId } from './utils';
 import Component from './component';
-import Member, { TYPES } from './member-base';
+import Member from './member-base';
 import Document from './document';
+import event from '../event';
 
 const a: xx = {
   x: '2',
 };
 
-export default class Parallel extends EventEmitter {
+export default class Parallel {
   private components: Map<string, Component> = new Map();
 
   constructor() {
-    super();
     this.initEvents();
   }
 
@@ -31,9 +31,9 @@ export default class Parallel extends EventEmitter {
   }
 
   private initEvents(): void {
-    this.on('active', this.onActive);
-    this.on('open', this.onOpen);
-    this.on('close', this.onClose);
+    event.on('open', this.onOpen.bind(this));
+    event.on('close', this.onClose.bind(this));
+    event.on('active', this.onActive.bind(this));
   }
 
   private activate(component: Component): void {
@@ -45,8 +45,8 @@ export default class Parallel extends EventEmitter {
     component.activated = true;
   }
 
-  public getOpenedComponent(path: string) {
-    let id = Document.createId(path);
+  public getOpenedDocment(path: string) {
+    let id = createId(path);
     let type = Member.getTypeByPath(path);
     let component = this.components.get(id);
 
@@ -89,7 +89,7 @@ export default class Parallel extends EventEmitter {
    * @event onDidChangeActiveTextEditor
    */
   private onClose(root: string, path: string) {
-    let id = Document.createId(path);
+    let id = createId(path);
     let component = this.components.get(id);
     if (component) {
       let type = Member.getTypeByPath(path);
@@ -121,7 +121,7 @@ export default class Parallel extends EventEmitter {
    * @param {Uri} path
    */
   openComponent(root: string, path: string): Component | undefined {
-    let id: string = Document.createId(path);
+    let id: string = createId(path);
     let { scriptDirs, styleDirs, templateDirs, componentDirs } = config;
     let conf = [...scriptDirs, ...styleDirs, ...templateDirs, ...componentDirs];
     let patterns = config.mergePatterns([], conf);
@@ -134,12 +134,6 @@ export default class Parallel extends EventEmitter {
 
       if (!component) {
         component = new Component(root, path);
-        component.on(
-          'openDocument',
-          (document: Document, columnIndex: number = 1): void => {
-            this.emit('openDocument', document, columnIndex);
-          },
-        );
       }
 
       this.activate(component);
@@ -164,7 +158,7 @@ export default class Parallel extends EventEmitter {
     } = config;
 
     // 没有开启对应的列
-    if (!columnOrders.includes(type)) {
+    if (!this.isSplitMode(path) && !columnOrders.includes(type)) {
       return false;
     }
 
@@ -196,10 +190,14 @@ export default class Parallel extends EventEmitter {
 
   static isSplitMode(path: string): boolean {
     let { isSplitSFC, sfcExts } = config;
-    let isSFC = mm.isMatch(path, `*{${sfcExts.join(',')}}`, {
+    let exts = config.mergePatterns([], sfcExts);
+    let isSFC = mm.isMatch(path, `*{${exts.join(',')}}`, {
       matchBase: true,
     });
+    let isSplited = mm.isMatch(path, '**/.vscodeparallel/components/**', {
+      dot: true,
+    });
 
-    return isSFC && isSplitSFC;
+    return isSFC && isSplitSFC && !isSplited;
   }
 }
