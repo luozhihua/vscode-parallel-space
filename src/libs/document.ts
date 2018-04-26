@@ -8,7 +8,7 @@ import { DocType } from '../config';
 import { createId } from './utils';
 
 export default class Document {
-  constructor(type: DocType, path: string, isMain: boolean = false) {
+  constructor(type: DocType, path: string) {
     this.type = type;
     this.path = path;
     this.id = createId(path);

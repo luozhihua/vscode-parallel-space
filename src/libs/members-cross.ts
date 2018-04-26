@@ -2,16 +2,16 @@
  * @Author: Colin Luo
  * @Date: 2018-04-21 14:39:36
  * @Last Modified by: Colin Luo <mail@luozhihua.com>
- * @Last Modified time: 2018-04-25 03:43:57
+ * @Last Modified time: 2018-04-26 03:32:34
  */
 // import * as fs from 'fs';
 import * as mm from 'micromatch';
 import * as walker from 'klaw-sync';
 import { config, SCRIPT, STYLE, TEMPLATE } from '../config';
-import Member, { MemberFiles } from './member-base';
+import Members, { MemberFiles } from './members-base';
 import {} from './document';
 
-export default class MemberCrossMode extends Member {
+export default class MembersCrossMode extends Members {
   constructor(root: string, path: string) {
     super(root, path);
   }
@@ -26,7 +26,7 @@ export default class MemberCrossMode extends Member {
     };
 
     availables.forEach((path: string) => {
-      let type: string = MemberCrossMode.getTypeByPath(path);
+      let type: string = MembersCrossMode.getTypeByPath(path);
 
       files[type].push(path);
     });

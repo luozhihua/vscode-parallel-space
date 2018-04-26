@@ -1,24 +1,24 @@
-<script>
+<script lang="js">
 export default {
   data() {
     return {};
   },
 
   mounted() {
-    console.log('mounted!');
+    console.log('sadasd9999ddd搜索99');
   },
 };
-
 </script>
 
 <style lang="less">
   .dialog {
-    width: 100px;
+    width: 1044422px;
 
     header {
       height: 40px;
       background: red;
     }
+
     main {
       padding: 10px;
       min-height: 400px;
@@ -31,14 +31,13 @@ export default {
   }
 </style>
 
-
 <template>
-  <div class="dialog">
+<div class="dialog">
     <header>header</header>
     <main>
       <p>asd</p>
       <ul>
-        <li>100000000000</li>
+        <li>ss</li>
         <li>2</li>
         <li>3</li>
         <li>4</li>
@@ -52,5 +51,4 @@ export default {
     </main>
     <footer>footer</footer>
   </div>
-
 </template>

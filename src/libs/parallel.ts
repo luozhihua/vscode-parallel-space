@@ -2,19 +2,15 @@
  * @Author: Colin Luo
  * @Date: 2018-04-17 06:30:10
  * @Last Modified by: Colin Luo <mail@luozhihua.com>
- * @Last Modified time: 2018-04-26 00:43:13
+ * @Last Modified time: 2018-04-26 07:19:44
  */
 import * as mm from 'micromatch';
 import { config, TYPES } from '../config';
 import { createId } from './utils';
 import Component from './component';
-import Member from './member-base';
+import Members from './members';
 import Document from './document';
 import event from '../event';
-
-const a: xx = {
-  x: '2',
-};
 
 export default class Parallel {
   private components: Map<string, Component> = new Map();
@@ -45,26 +41,23 @@ export default class Parallel {
     component.activated = true;
   }
 
-  public getOpenedDocment(path: string) {
-    let id = createId(path);
-    let type = Member.getTypeByPath(path);
-    let component = this.components.get(id);
-
-    if (component) {
-      return component[type].textDocument;
-    }
-  }
-
   /**
    * @description 文件被激活为当前正在编辑状态时触发的事件方法
    * @param {string} path
    * @event onDidChangeActiveTextEditor
    */
   private onActive(root: string, path: string) {
-    let type = Member.getTypeByPath(path);
+    let type = Members.getTypeByPath(path);
     let activated = this.activatedComponent;
+    let component = this.getComponentByPath(path);
 
-    if (activated && activated[type] && activated[type].path !== path) {
+    if (component) {
+      if (activated && activated[type] && activated[type].path !== path) {
+        setTimeout(() => {
+          this.openComponent(root, path);
+        }, 100);
+      }
+    } else {
       setTimeout(() => {
         this.openComponent(root, path);
       }, 100);
@@ -88,11 +81,11 @@ export default class Parallel {
    * @param {string} path
    * @event onDidChangeActiveTextEditor
    */
-  private onClose(root: string, path: string) {
-    let id = createId(path);
-    let component = this.components.get(id);
+  private onClose(path: string) {
+    let component = this.getComponentByPath(path);
+
     if (component) {
-      let type = Member.getTypeByPath(path);
+      let type = Members.getTypeByPath(path);
       let document: Document = component[type];
 
       if (document) {
@@ -100,6 +93,42 @@ export default class Parallel {
       }
     }
   }
+
+  public getOpenedDocument(path: string) {
+    let component = this.getComponentByPath(path);
+    let type = Members.getTypeByPath(path);
+
+    if (component) {
+      return component[type].textDocument;
+    }
+  }
+
+  /**
+   * @description Get a component which is matched to the given file path
+   * @param {string} path
+   * @returns {(Component | undefined)}
+   */
+  getComponentByPath(path: string): Component | undefined {
+    let component;
+    this.components.forEach((item: Component, key): any => {
+      if (createId(path) === key) {
+        component = item;
+        return false;
+      } else {
+        TYPES.forEach((type): any => {
+          let document = item[type];
+
+          if (document && document.path === path) {
+            component = item;
+            return false;
+          }
+        });
+      }
+    });
+
+    return component;
+  }
+
   /**
    * @description 打开组件相关的文件
    * @param {string} path
@@ -109,6 +138,7 @@ export default class Parallel {
       if (component) {
         let document: Document = component[type];
 
+        this.components.set(component.id, component);
         if (document) {
           this.components.set(document.id, component);
         }
@@ -120,8 +150,7 @@ export default class Parallel {
    * @description 显示组件相关的文件
    * @param {Uri} path
    */
-  openComponent(root: string, path: string): Component | undefined {
-    let id: string = createId(path);
+  openComponent(root: string, path: string): any {
     let { scriptDirs, styleDirs, templateDirs, componentDirs } = config;
     let conf = [...scriptDirs, ...styleDirs, ...templateDirs, ...componentDirs];
     let patterns = config.mergePatterns([], conf);
@@ -130,21 +159,21 @@ export default class Parallel {
     });
 
     if (matches && matches.length > 0) {
-      let component = this.components.get(id);
+      let component = this.getComponentByPath(path);
 
       if (!component) {
         component = new Component(root, path);
       }
 
       this.activate(component);
-      component.open(path);
+      component.open();
 
       return component;
     }
   }
 
   static isFileSupported(root: string, path: string) {
-    let type = Member.getTypeByPath(path);
+    let type = Members.getTypeByPath(path);
     let {
       componentDirs,
       scriptDirs,
@@ -158,7 +187,7 @@ export default class Parallel {
     } = config;
 
     // 没有开启对应的列
-    if (!this.isSplitMode(path) && !columnOrders.includes(type)) {
+    if (!Members.isSplitMode(path) && !columnOrders.includes(type)) {
       return false;
     }
 
@@ -186,18 +215,5 @@ export default class Parallel {
       !mm.isMatch(path, `${root}/**/{${excludes}}{s,}/**`, excludeOptions) &&
       mm.isMatch(path, `${root}/**/{${dirs}}{s,}/**/*{${exts}}`, inludeOptions)
     );
-  }
-
-  static isSplitMode(path: string): boolean {
-    let { isSplitSFC, sfcExts } = config;
-    let exts = config.mergePatterns([], sfcExts);
-    let isSFC = mm.isMatch(path, `*{${exts.join(',')}}`, {
-      matchBase: true,
-    });
-    let isSplited = mm.isMatch(path, '**/.vscodeparallel/components/**', {
-      dot: true,
-    });
-
-    return isSFC && isSplitSFC && !isSplited;
   }
 }

@@ -2,7 +2,7 @@
  * @Author: Colin Luo
  * @Date: 2018-04-17 06:30:10
  * @Last Modified by: Colin Luo <mail@luozhihua.com>
- * @Last Modified time: 2018-04-26 00:44:03
+ * @Last Modified time: 2018-04-26 17:52:26
  */
 
 import {
@@ -13,14 +13,16 @@ import {
   commands,
   TextEditor,
   TextDocument,
-  TextDocumentChangeEvent,
   Uri,
+  TextEditorSelectionChangeEvent,
 } from 'vscode';
 
 import Parallel from './libs/parallel';
 import Document from './libs/document';
 import { createId } from './libs/utils';
 import event from './event';
+import Members from './libs/members';
+import VueSpliter from './libs/vue-spliter';
 
 let disposable: Disposable;
 
@@ -54,6 +56,23 @@ export function activate(context: ExtensionContext) {
     },
   );
 
+  // 关闭一个文档
+  event.on(
+    'destroyDocument',
+    async (document: Document, callback: Function) => {
+      await window.showTextDocument(Uri.parse(`file://${document.path}`), {
+        preview: false,
+        preserveFocus: true,
+      });
+
+      await commands.executeCommand('workbench.action.closeActiveEditor');
+
+      if (typeof callback === 'function') {
+        callback();
+      }
+    },
+  );
+
   // 关闭文档
   workspace.onDidCloseTextDocument(
     (doc: TextDocument) => {
@@ -62,7 +81,7 @@ export function activate(context: ExtensionContext) {
 
       // 检测文件是否被Parallel所支持
       if (root && Parallel.isFileSupported(root.uri.path, uri.path)) {
-        event.emit('close', root.uri.path, uri.path);
+        event.emit('close', uri.path);
       }
     },
     parallel,
@@ -90,7 +109,7 @@ export function activate(context: ExtensionContext) {
       if (editor !== undefined) {
         let uri = editor.document.uri;
         let root = workspace.getWorkspaceFolder(uri);
-        let openedDoc = parallel.getOpenedDocment(uri.path);
+        let openedDoc = parallel.getOpenedDocument(uri.path);
         // let isSplitMode = Parallel.isSplitMode(uri.path);
 
         if (
@@ -113,23 +132,42 @@ export function activate(context: ExtensionContext) {
     subscriptions,
   );
 
-  window.onDidChangeVisibleTextEditors((editors: TextEditor[]): void => {
-    console.log(editors);
-  }, parallel);
+  // 一般情况下鼠标点击或者改变光标位置时会调用
+  window.onDidChangeTextEditorSelection(
+    (changeEvent: TextEditorSelectionChangeEvent) => {
+      let document = changeEvent.textEditor.document;
+      let path = document.uri.path;
+      let component = parallel.getComponentByPath(path);
+      let root = workspace.getWorkspaceFolder(document.uri);
 
-  workspace.onDidChangeTextDocument((event: TextDocumentChangeEvent) => {
-    console.log(event);
-  });
+      if (root && !component && Parallel.isFileSupported(root.uri.path, path)) {
+        event.emit('open', root.uri.path, path);
+      }
+    },
+  );
 
+  // 保存文件
   workspace.onDidSaveTextDocument((doc: TextDocument) => {
-    console.log(event);
     let path = doc.uri.path;
+    let root = workspace.getWorkspaceFolder(doc.uri);
     let id = createId(path);
 
+    // 通知SFC的子文件重新merge
     event.emit(`save-${id}`, path);
+
+    // 如果是从单文件组件直接修改内容，则重新对单文件组件进行分割以更新子文件的内容
+    let component = parallel.getComponentByPath(path);
+    if (root && Members.isSplitMode(path)) {
+      if (component) {
+        component.updateMembers(root.uri.path, path);
+      } else {
+        let spliter = new VueSpliter(root.uri.path, path);
+
+        spliter.split();
+      }
+    }
   });
 
-  commands.executeCommand('workbench.action.close');
   disposable = Disposable.from(...subscriptions);
   context.subscriptions.push(parallel);
 }

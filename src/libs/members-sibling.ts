@@ -2,15 +2,15 @@
  * @Author: Colin Luo
  * @Date: 2018-04-21 14:39:32
  * @Last Modified by: Colin Luo <mail@luozhihua.com>
- * @Last Modified time: 2018-04-25 03:48:30
+ * @Last Modified time: 2018-04-26 03:32:45
  */
 import * as mm from 'micromatch';
 import * as walker from 'klaw-sync';
 import { config, SCRIPT, STYLE, TEMPLATE } from '../config';
-import { MemberFiles } from './member-base';
-import MemberCrossMode from './member-cross';
+import { MemberFiles } from './members-base';
+import MembersCrossMode from './members-cross';
 
-export default class MemberSiblingMode extends MemberCrossMode {
+export default class MembersSiblingMode extends MembersCrossMode {
   constructor(root: string, path: string) {
     super(root, path);
   }
@@ -32,7 +32,7 @@ export default class MemberSiblingMode extends MemberCrossMode {
     };
 
     availables.forEach((path: string) => {
-      let type: string = MemberSiblingMode.getTypeByPath(path);
+      let type: string = MembersSiblingMode.getTypeByPath(path);
 
       files[type].push(path);
     });

@@ -2,14 +2,14 @@
  * @Author: Colin Luo
  * @Date: 2018-04-21 14:39:06
  * @Last Modified by: Colin Luo <mail@luozhihua.com>
- * @Last Modified time: 2018-04-26 01:43:29
+ * @Last Modified time: 2018-04-26 07:03:27
  */
 import * as fs from 'fs';
 import * as jsdom from 'jsdom';
 import * as mkdirp from 'mkdirp';
-import { SCRIPT, STYLE, TEMPLATE, TYPES, DocType, DocTypes } from '../config';
+import { SCRIPT, STYLE, TEMPLATE, TYPES, DocType } from '../config';
 import { IPath, createId } from './utils';
-import { LangID } from './member';
+import { LangID } from './members';
 import event from '../event';
 
 export interface LangID {
@@ -48,6 +48,12 @@ export default interface VueSpliter {
   [key: string]: any;
 }
 
+const DEF_CONTETN = {
+  [SCRIPT]: 'export default {\n  data(){\n    return {}\n  }\n}',
+  [STYLE]: '  .example{}',
+  [TEMPLATE]: '<div class="example">\n  <!--contents-->\n</div>',
+};
+
 export default class VueSpliter {
   public [SCRIPT]: string;
   public [STYLE]: string;
@@ -64,35 +70,14 @@ export default class VueSpliter {
     this.root = root;
     this.path = path;
     this.tempDir = this.mkdir();
-
-    this.split();
-    this.createFile();
   }
 
-  private mkdir() {
-    let id = createId(this.path);
-    let path = `${this.root}/.vscodeparallel/components/${id}`;
-
-    mkdirp.sync(path);
-    return path;
-  }
-
-  private createDOMFromPath(path: string): HTMLCollection {
-    let componentContent = fs.readFileSync(path, 'utf8');
-    let dom = new jsdom.JSDOM(`<body>${componentContent}</body>`);
-    let document: any = dom.window.document;
-    let body: HTMLBodyElement = document.body;
-    let children: HTMLCollection = body.children;
-
-    return children;
-  }
-
-  private split() {
+  public split() {
     let doms: HTMLCollection = this.createDOMFromPath(this.path);
 
     Array.from(doms).forEach((elem: Element): void => {
-      let content: string = elem.innerHTML;
-      let [startWrapper, endWrapper] = elem.outerHTML.split(elem.innerHTML);
+      let content: string = elem.innerHTML.trim();
+      let [startWrapper, endWrapper] = this.getWrapper(elem);
       let tagName: string = elem.nodeName.toLowerCase();
       let lang = elem.getAttribute('lang') || langs[tagName];
       let slice: VueSlice = {
@@ -112,6 +97,141 @@ export default class VueSpliter {
         this.parts[STYLE].push(slice);
       }
     });
+
+    let fillDefaultPart = this.fillDefaultPart();
+    this.createFile();
+
+    if (fillDefaultPart) {
+      this.merge();
+    }
+  }
+
+  private fillDefaultPart(): boolean {
+    let hasEmptyBlock = false;
+
+    TYPES.forEach((type: DocType) => {
+      let part = this.parts[type];
+      if (Array.isArray(part) && part.length === 0) {
+        part.push({
+          startWrapper: '<style lang="css">',
+          endWrapper: '</style>',
+          content: DEF_CONTETN[type],
+          lang: 'css',
+          ext: 'css',
+          scope: false,
+          type: STYLE,
+          path: '',
+        });
+        hasEmptyBlock = true;
+      } else if (!part) {
+        this.parts[type] = {
+          startWrapper: `<${type} lang="${langs[type]}">`,
+          endWrapper: `</${type}>`,
+          content: DEF_CONTETN[type],
+          lang: langs[type],
+          ext: langs[type],
+          scope: false,
+          type: STYLE,
+          path: '',
+        };
+        hasEmptyBlock = true;
+      }
+    });
+
+    return hasEmptyBlock;
+  }
+
+  public xsplit() {
+    let doms: HTMLCollection = this.createDOMFromPath(this.path);
+
+    Array.from(doms).forEach((elem: Element): void => {
+      let content: string = elem.innerHTML.trim();
+      let [startWrapper, endWrapper] = this.getWrapper(elem);
+      let tagName: string = elem.nodeName.toLowerCase();
+      let lang = elem.getAttribute('lang') || langs[tagName];
+      let slice: VueSlice = {
+        startWrapper,
+        endWrapper,
+        content,
+        lang: lang,
+        ext: lang,
+        scope: !!elem.getAttribute('scope'),
+        type: (tagName === this.STYLESHEET ? STYLE : tagName) as DocType,
+        path: '',
+      };
+
+      if ([SCRIPT as DocType, TEMPLATE as DocType].includes(slice.type)) {
+        this.parts[slice.type] = slice;
+      } else if (slice.type === STYLE) {
+        this.parts[STYLE].push(slice);
+      }
+    });
+
+    this.createFile();
+  }
+
+  /**
+   * @description Merge sub files into Single-file Component
+   */
+  public merge(): void {
+    let parts: string[] = [];
+
+    [SCRIPT, STYLE, TEMPLATE].forEach((type: DocType) => {
+      let part = this.parts[type];
+
+      if (Array.isArray(part)) {
+        part.forEach((slice: VueSlice) => {
+          parts.push(fs.readFileSync(slice.path, 'utf-8'));
+        });
+      } else if (part) {
+        parts.push(
+          [
+            (<VueSlice>part).startWrapper,
+            fs.readFileSync((<VueSlice>part).path, 'utf-8'),
+            (<VueSlice>part).endWrapper,
+          ].join('\n'),
+        );
+      }
+    });
+
+    fs.writeFileSync(this.path, parts.join('\n\n'));
+  }
+
+  private mkdir() {
+    let id = createId(this.path);
+    let path = `${this.root}/.vscodeparallel/components/${id}`;
+
+    mkdirp.sync(path);
+
+    // Save main component's path into splited components directory.
+    fs.writeFileSync(`${path}/.path`, this.path);
+    return path;
+  }
+
+  private fakeStyleTag(content: string): string {
+    return content
+      .replace(/\<style\s+/, '<stylesheet ')
+      .replace(/\<\/style\>/, '</stylesheet>')
+      .trim();
+  }
+
+  private getWrapper(elem: any): string[] {
+    return elem.outerHTML.split(elem.innerHTML).map((wrapper: string) => {
+      return wrapper
+        .replace(/\<stylesheet\s+/, '<style ')
+        .replace(/\<\/stylesheet\>/, '</style>')
+        .trim();
+    });
+  }
+
+  private createDOMFromPath(path: string): HTMLCollection {
+    let componentContent = this.fakeStyleTag(fs.readFileSync(path, 'utf8'));
+    let dom = new jsdom.JSDOM(`<body>${componentContent}</body>`);
+    let document: any = dom.window.document;
+    let body: HTMLBodyElement = document.body;
+    let children: HTMLCollection = body.children;
+
+    return children;
   }
 
   private createFile() {
@@ -129,11 +249,11 @@ export default class VueSpliter {
         part.forEach(slice => {
           let { startWrapper, content, endWrapper } = slice;
 
-          styles.push(startWrapper, content, endWrapper);
+          styles.push(startWrapper, '\n', content, '\n', endWrapper);
           slice.path = filepath || '';
         });
 
-        this.writeFileSync(filepath, styles.join('\n\n\r\r'));
+        this.writeFileSync(filepath, styles.join(''));
       } else if (part) {
         filepath = `${dir}/${ipath.base}.${part.ext.replace(/^\./, '')}`;
 
@@ -153,32 +273,5 @@ export default class VueSpliter {
     fs.writeFileSync(filepath, content);
 
     event.on(`save-${id}`, this.merge.bind(this));
-  }
-
-  /**
-   * @description Merge sub files into Single-file Component
-   */
-  private merge(): void {
-    let parts: string[] = [];
-
-    [SCRIPT, STYLE, TEMPLATE].forEach((type: DocType) => {
-      let part = this.parts[type];
-
-      if (part && (<VueSlice>part).type === type) {
-        parts.push(
-          [
-            (<VueSlice>part).startWrapper,
-            fs.readFileSync((<VueSlice>part).path, 'utf-8'),
-            (<VueSlice>part).endWrapper,
-          ].join('\n'),
-        );
-      } else if (Array.isArray(part)) {
-        part.forEach((slice: VueSlice) => {
-          parts.push(fs.readFileSync(slice.path, 'utf-8'));
-        });
-      }
-    });
-
-    fs.writeFileSync(this.path, parts.join('\n\n'));
   }
 }

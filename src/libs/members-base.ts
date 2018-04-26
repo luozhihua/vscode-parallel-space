@@ -2,7 +2,6 @@
 import * as mm from 'micromatch';
 import { config, DocType, SCRIPT, STYLE, TEMPLATE, TYPES } from '../config';
 import { IPath } from './utils';
-import Document from './document';
 
 export interface MemberFiles {
   [key: string]: any;
@@ -13,18 +12,10 @@ export interface MemberFiles {
   [TEMPLATE]: string[];
 }
 
-export interface DocumentMap {
-  [key: string]: Document | undefined;
-  [SCRIPT]: Document | undefined;
-  [STYLE]: Document | undefined;
-  [TEMPLATE]: Document | undefined;
-}
-
-export default abstract class Member {
+export default abstract class Members {
   public [SCRIPT]: string | undefined;
   public [STYLE]: string | undefined;
   public [TEMPLATE]: string | undefined;
-  public documents: DocumentMap | undefined;
   public readonly files: MemberFiles;
   protected readonly root: string;
   protected readonly path: string;
@@ -142,11 +133,11 @@ export default abstract class Member {
   }
 
   public static getTypeByPath(uri: string): string {
-    return Member.isScript(uri)
+    return Members.isScript(uri)
       ? (SCRIPT as DocType)
-      : Member.isStyle(uri)
+      : Members.isStyle(uri)
         ? (STYLE as DocType)
-        : Member.isTemplate(uri)
+        : Members.isTemplate(uri)
           ? (TEMPLATE as DocType)
           : '';
   }

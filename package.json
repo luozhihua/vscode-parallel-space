@@ -3,8 +3,8 @@
   "displayName": "Parallel Components Editor",
   "icon": "icon.png",
   "description":
-    "Edit component’s parts(tamplate/script/style) use 3 columns view, It’s layout looks like CodePen/JSFiddle/JSBin, used for Angular components, Vue TypeScript components or other mvc/mvvm components which itself’s templates/scripts/styles parts each as single file wrappered with in the same folder.",
-  "version": "1.0.0",
+    "Edit component’s parts(tamplate/script/style) use multi columns layout looks like CodePen/JSFiddle/JSBin, used for Angular components, Vue TypeScript components, Vue SFC(single-file component) or other mvc/mvvm components which itself’s templates/scripts/styles parts each as standalone file or as Single-file.",
+  "version": "2.0.0",
   "publisher": "ColinLuo",
   "author": "Colin Luo <mail@luozhihua.com>",
   "license": "MIT",
@@ -28,33 +28,10 @@
       "type": "object",
       "title": "Parallel Editor",
       "properties": {
-        "parallel.testcase.exts": {
-          "type": "array",
-          "default": [".spec.js", ".test.ts"],
-          "description": ""
-        },
-        "parallel.testcase.dirs": {
-          "type": "array",
-          "default": ["src/test", "test"],
-          "description": ""
-        },
-        "parallel.testcase.enable": {
-          "type": "boolean",
-          "default": true,
-          "description": ""
-        },
         "parallel.enable": {
           "type": "boolean",
           "default": true,
           "description": "Wether enable Parallel Components Editor.",
-          "scope": "resource"
-        },
-        "parallel.mode": {
-          "type": "string",
-          "enum": ["same-directory", "cross-directory"],
-          "default": ["same-directory"],
-          "description":
-            "If your folded script & style & template files grouped by component names, please use *`same-directory`* mode. <br/> If your put all style files in a dir named `styles`, all script files in a dir named `scrips` and all template files in a dir named `views`, please use *`cross-directory`* mode.",
           "scope": "resource"
         },
         "parallel.componentFolders": {
@@ -67,7 +44,7 @@
             "[Case insensitive] A set of folder-names or short-paths using for locate components. Parallel built-ins: ['component[s]', 'view[s]', 'page[s]']",
           "scope": "resource"
         },
-        "parallel.scriptFoldersForCrossMode": {
+        "parallel.scriptFolders": {
           "type": "array",
           "items": {
             "type": "string"
@@ -77,7 +54,7 @@
             "[Case insensitive] A set of folder-names or short-paths using for locate script files when `cross-directory mode`. Parallel built-ins: ['script[s]', 'controller[s]', 'ctrl[s]',  'javascript[s]', 'typescript[s]', 'coffeescript[s]', ...scriptsExtNames]",
           "scope": "resource"
         },
-        "parallel.styleFoldersForCrossMode": {
+        "parallel.styleFolders": {
           "type": "array",
           "items": {
             "type": "string"
@@ -87,7 +64,7 @@
             "[Case insensitive] A set of folder-names or short-paths using for locate style files when `cross-directory mode`. Parallel built-ins: ['style[s]', ...styleExtNames]",
           "scope": "resource"
         },
-        "parallel.templateFoldersForCrossMode": {
+        "parallel.templateFolders": {
           "type": "array",
           "items": {
             "type": "string"
@@ -127,7 +104,7 @@
             "[Case insensitive] A set of extnames used for detect component's template file, The extnames you setted will be merged into the built-ins and deduplicated, built-in template extnames: ['.jade', '.pug', '.tpl', '.html', '.htm', '.xhtml', '.xml', '.mustache', '.ejs', '.def', '.dot', '.jst', '.handlebars', '.hbs', '.haml', '.dust', '.njk'], use `!` symbol to exlcude a built-in extName like `['!.xml'] or use `['!built-in']` to exclude all build-ins.",
           "scope": "resource"
         },
-        "parallel.columnsEnabledAndOrders": {
+        "parallel.columnsOrder": {
           "type": "array",
           "items": {
             "type": "string"

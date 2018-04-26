@@ -94,39 +94,30 @@ export default class Config {
   }
 
   public get scriptDirs() {
-    let { scriptFoldersForCrossMode } = this.getWorkspaceConfig();
+    let { scriptFolders } = this.getWorkspaceConfig();
     let exts: string[] = this.scriptExts.reduce((res, cur) => {
       return res.concat(cur.substr(1) as never);
     }, []);
 
-    return this.mergePatterns(DEF_SCRIPT_DIR, [
-      ...scriptFoldersForCrossMode,
-      ...exts,
-    ]);
+    return this.mergePatterns(DEF_SCRIPT_DIR, [...scriptFolders, ...exts]);
   }
 
   public get styleDirs() {
-    let { styleFoldersForCrossMode } = this.getWorkspaceConfig();
+    let { styleFolders } = this.getWorkspaceConfig();
     let exts: string[] = this.styleExts.reduce((res, cur) => {
       return res.concat(cur.substr(1) as never);
     }, []);
 
-    return this.mergePatterns(DEF_STYLE_DIR, [
-      ...styleFoldersForCrossMode,
-      ...exts,
-    ]);
+    return this.mergePatterns(DEF_STYLE_DIR, [...styleFolders, ...exts]);
   }
 
   public get templateDirs() {
-    let { templateFoldersForCrossMode } = this.getWorkspaceConfig();
+    let { templateFolders } = this.getWorkspaceConfig();
     let exts: string[] = this.templateExts.reduce((res, cur) => {
       return res.concat(cur.substr(1) as never);
     }, []);
 
-    return this.mergePatterns(DEF_TEMPLATE_DIR, [
-      ...templateFoldersForCrossMode,
-      ...exts,
-    ]);
+    return this.mergePatterns(DEF_TEMPLATE_DIR, [...templateFolders, ...exts]);
   }
 
   public get componentDirs() {
@@ -171,14 +162,7 @@ export default class Config {
 
   public get columnOrders(): string[] {
     let { columnsOrder } = this.getWorkspaceConfig();
-    let defaultOrder = config.defaultColumnsOrder;
     let order = [...columnsOrder];
-
-    // defaultOrder.forEach(item => {
-    //   if (!columnsOrder.includes(item)) {
-    //     order.push(item);
-    //   }
-    // });
 
     return order;
   }
