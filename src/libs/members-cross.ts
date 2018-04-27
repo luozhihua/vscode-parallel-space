@@ -9,7 +9,6 @@ import * as mm from 'micromatch';
 import * as walker from 'klaw-sync';
 import { config, SCRIPT, STYLE, TEMPLATE } from '../config';
 import Members, { MemberFiles } from './members-base';
-import {} from './document';
 
 export default class MembersCrossMode extends Members {
   constructor(root: string, path: string) {

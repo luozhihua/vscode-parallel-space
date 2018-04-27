@@ -19,16 +19,43 @@
     "url":
       "https://github.com/luozhihua/vscode-parallel-components-editor/issues"
   },
-  "categories": ["Language Packs", "Formatters"],
+  "categories": ["Programming Languages", "Formatters"],
   "activationEvents": ["*"],
   "main": "./out/extension",
   "typings": "src/typings/index.d.ts",
   "contributes": {
+    "commands": [
+      {
+        "command": "parallel.enableForCurrentDocument",
+        "title": "Enable Parallel for activated document.",
+        "category": "Parallel",
+        "icon": {
+          "light": "resources/icons/light/icon.png",
+          "dark": "resources/icons/dark/icon.png"
+        }
+      }
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "command": "parallel.enableForCurrentDocument",
+          "when": "config.parallel.enabled",
+          "group": "navigation"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "parallel.enableForCurrentDocument",
+          "when": "config.parallel.enabled",
+          "group": "navigation"
+        }
+      ]
+    },
     "configuration": {
       "type": "object",
       "title": "Parallel Editor",
       "properties": {
-        "parallel.enable": {
+        "parallel.enabled": {
           "type": "boolean",
           "default": true,
           "description": "Wether enable Parallel Components Editor.",
@@ -143,7 +170,7 @@
   },
   "devDependencies": {
     "@types/commondir": "^1.0.2",
-    "@types/jsdom": "^11.0.5",
+    "@types/jsdom": "^11.0.6",
     "@types/klaw-sync": "^2.0.1",
     "@types/lodash": "^4.14.107",
     "@types/micromatch": "^3.1.0",

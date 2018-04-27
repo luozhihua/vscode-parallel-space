@@ -2,14 +2,13 @@
  * @Author: Colin Luo
  * @Date: 2018-04-17 06:30:10
  * @Last Modified by: Colin Luo <mail@luozhihua.com>
- * @Last Modified time: 2018-04-26 07:19:44
+ * @Last Modified time: 2018-04-27 16:28:37
  */
 import * as mm from 'micromatch';
 import { config, TYPES } from '../config';
 import { createId } from './utils';
 import Component from './component';
-import Members from './members';
-import Document from './document';
+import Members, { Member } from './members';
 import event from '../event';
 
 export default class Parallel {
@@ -59,7 +58,7 @@ export default class Parallel {
       }
     } else {
       setTimeout(() => {
-        this.openComponent(root, path);
+        // this.openComponent(root, path);
       }, 100);
     }
   }
@@ -70,6 +69,15 @@ export default class Parallel {
    * @event onDidChangeActiveTextEditor
    */
   private onOpen(root: string, path: string) {
+    // this.open(rootm path)
+  }
+
+  /**
+   * @description 打开文件时触发的事件方法
+   * @param {string} path
+   * @event onDidChangeActiveTextEditor
+   */
+  public open(root: string, path: string) {
     let component = this.openComponent(root, path);
     if (component) {
       this.rememberComponent(component);
@@ -116,9 +124,9 @@ export default class Parallel {
         return false;
       } else {
         TYPES.forEach((type): any => {
-          let document = item[type];
+          let member = item[type];
 
-          if (document && document.path === path) {
+          if (member && member.path === path) {
             component = item;
             return false;
           }
@@ -136,11 +144,11 @@ export default class Parallel {
   rememberComponent(component: Component) {
     TYPES.forEach((type: string) => {
       if (component) {
-        let document: Document = component[type];
+        let member: Member = component[type];
 
         this.components.set(component.id, component);
-        if (document) {
-          this.components.set(document.id, component);
+        if (member) {
+          this.components.set(member.id, component);
         }
       }
     });

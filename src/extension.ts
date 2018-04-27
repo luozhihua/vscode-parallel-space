@@ -2,7 +2,7 @@
  * @Author: Colin Luo
  * @Date: 2018-04-17 06:30:10
  * @Last Modified by: Colin Luo <mail@luozhihua.com>
- * @Last Modified time: 2018-04-26 17:52:26
+ * @Last Modified time: 2018-04-27 16:57:21
  */
 
 import {
@@ -18,10 +18,9 @@ import {
 } from 'vscode';
 
 import Parallel from './libs/parallel';
-import Document from './libs/document';
 import { createId } from './libs/utils';
 import event from './event';
-import Members from './libs/members';
+import Members, { Member } from './libs/members';
 import VueSpliter from './libs/vue-spliter';
 
 let disposable: Disposable;
@@ -30,11 +29,26 @@ export function activate(context: ExtensionContext) {
   let subscriptions: Disposable[] = [];
   let parallel = new Parallel();
 
+  commands.registerTextEditorCommand(
+    'parallel.enableForCurrentDocument',
+    (editor: TextEditor) => {
+      if (editor !== undefined) {
+        let uri = editor.document.uri;
+        let root = workspace.getWorkspaceFolder(uri);
+
+        if (root) {
+          parallel.open(root.uri.path, uri.path);
+        }
+      }
+      console.log(window.activeTextEditor);
+    },
+  );
+
   event.on(
     'openDocument',
-    async (document: Document, columnIndex: number = 1): Promise<void> => {
+    async (member: Member, columnIndex: number = 1): Promise<void> => {
       let visibles = window.visibleTextEditors;
-      let path = Uri.parse(`file://${document.path}`);
+      let path = Uri.parse(`file://${member.path}`);
       let isVisibled = false;
       let options = {
         preview: false,
@@ -43,7 +57,7 @@ export function activate(context: ExtensionContext) {
       };
 
       visibles.forEach(cur => {
-        if (cur.document.uri.path === document.path) {
+        if (cur.document.uri.path === member.path) {
           isVisibled = true;
         }
       });
@@ -51,25 +65,24 @@ export function activate(context: ExtensionContext) {
       if (!isVisibled) {
         let textDoc = await window.showTextDocument(path, options);
 
-        document.textDocument = textDoc;
+        member.textDocument = textDoc;
       }
     },
   );
 
   // 关闭一个文档
   event.on(
-    'destroyDocument',
-    async (document: Document, callback: Function) => {
-      await window.showTextDocument(Uri.parse(`file://${document.path}`), {
+    'requiredCloseDocument',
+    async (member: Member, columnIndex?: number) => {
+      await window.showTextDocument(Uri.parse(`file://${member.path}`), {
         preview: false,
         preserveFocus: true,
+        viewColumn: columnIndex || member.textDocument.viewColumn,
       });
 
       await commands.executeCommand('workbench.action.closeActiveEditor');
-
-      if (typeof callback === 'function') {
-        callback();
-      }
+      event.emit('close', member.path);
+      console.log(22222);
     },
   );
 
@@ -105,7 +118,7 @@ export function activate(context: ExtensionContext) {
 
   // 已打开的文档被激活
   window.onDidChangeActiveTextEditor(
-    (editor?: TextEditor): void => {
+    async (editor?: TextEditor): Promise<void> => {
       if (editor !== undefined) {
         let uri = editor.document.uri;
         let root = workspace.getWorkspaceFolder(uri);
@@ -117,15 +130,19 @@ export function activate(context: ExtensionContext) {
           openedDoc &&
           openedDoc.viewColumn !== editor.viewColumn
         ) {
-          commands.executeCommand('workbench.action.closeActiveEditor');
+          // let cmds = [
+          //   'workbench.action.moveEditorToFirstGroup',
+          //   'workbench.action.moveEditorToSecondGroup',
+          //   'workbench.action.moveEditorToThirdGroup',
+          // ];
+          // await commands.executeCommand(cmds[openedDoc.viewColumn - 1]);
+          await commands.executeCommand('workbench.action.closeActiveEditor');
         }
 
-        setTimeout(() => {
-          // 检测文件是否被Parallel所支持
-          if (root && Parallel.isFileSupported(root.uri.path, uri.path)) {
-            event.emit('active', root.uri.path, uri.path);
-          }
-        }, 100);
+        // 检测文件是否被Parallel所支持
+        if (root && Parallel.isFileSupported(root.uri.path, uri.path)) {
+          event.emit('active', root.uri.path, uri.path);
+        }
       }
     },
     parallel,

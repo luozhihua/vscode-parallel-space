@@ -13,9 +13,9 @@ export interface MemberFiles {
 }
 
 export default abstract class Members {
-  public [SCRIPT]: string | undefined;
-  public [STYLE]: string | undefined;
-  public [TEMPLATE]: string | undefined;
+  public [SCRIPT]: DocType;
+  public [STYLE]: DocType;
+  public [TEMPLATE]: DocType;
   public readonly files: MemberFiles;
   protected readonly root: string;
   protected readonly path: string;
@@ -27,7 +27,7 @@ export default abstract class Members {
     this.files = this.resolveFiles();
 
     TYPES.forEach(type => {
-      this[type] = this.files[type][0];
+      this[type] = this.files[type][0] as DocType;
     });
   }
 

@@ -1,4 +1,4 @@
-<script lang="js">
+<script lang="coffee">
 export default {
   data() {
     return {};
@@ -31,9 +31,9 @@ export default {
   }
 </style>
 
-<template>
+<template lang="jade">
 <div class="dialog">
-    <header>header</header>
+    <header>headeryyy</header>
     <main>
       <p>asd</p>
       <ul>
@@ -51,4 +51,5 @@ export default {
     </main>
     <footer>footer</footer>
   </div>
+
 </template>

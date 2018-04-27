@@ -2,7 +2,7 @@
 # yarn lockfile v1
 
 
-"@types/braces@*", "@types/braces@^2.3.0":
+"@types/braces@*":
   version "2.3.0"
   resolved "https://npm.applinks.io:443/@types%2fbraces/-/braces-2.3.0.tgz#d00ec0a76562b2acb6f29330be33a093e33ed25c"
 
@@ -10,9 +10,9 @@
   version "1.0.2"
   resolved "https://npm.applinks.io:443/@types%2fcommondir/-/commondir-1.0.2.tgz#ac577a1e60af26633b25aa054d7a0e03fbbdcb60"
 
-"@types/jsdom@^11.0.5":
-  version "11.0.5"
-  resolved "https://npm.applinks.io:443/@types%2fjsdom/-/jsdom-11.0.5.tgz#2eaed698761f8cbdbf2d514b5e82ed26358bd6a5"
+"@types/jsdom@^11.0.6":
+  version "11.0.6"
+  resolved "https://npm.applinks.io:443/@types%2fjsdom/-/jsdom-11.0.6.tgz#97425d47e9be76ecb38daa509e2a09616076235d"
   dependencies:
     "@types/node" "*"
     "@types/tough-cookie" "*"
@@ -21,12 +21,6 @@
 "@types/klaw-sync@^2.0.1":
   version "2.0.1"
   resolved "https://npm.applinks.io:443/@types%2fklaw-sync/-/klaw-sync-2.0.1.tgz#e76329dd3b332fb5e2fc4c823c9192935f18e85a"
-
-"@types/klaw@^2.1.1":
-  version "2.1.1"
-  resolved "https://npm.applinks.io:443/@types%2fklaw/-/klaw-2.1.1.tgz#8cfe201e95de97e5cfc7c31ecc4941aa12ab1b2e"
-  dependencies:
-    "@types/node" "*"
 
 "@types/lodash@^4.14.107":
   version "4.14.107"

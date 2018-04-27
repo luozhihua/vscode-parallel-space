@@ -7,7 +7,7 @@
 
 import * as fs from 'fs';
 import * as mm from 'micromatch';
-import { config, SCRIPT, STYLE, TEMPLATE, TYPES } from '../config';
+import { config, SCRIPT, STYLE, TEMPLATE, TYPES, DocType } from '../config';
 import { IPath } from './utils';
 import { MemberFiles } from './members-base';
 import MembersSiblingMode from './members-sibling';
@@ -18,6 +18,14 @@ export interface LangID {
   [SCRIPT]: string;
   [STYLE]: string;
   [TEMPLATE]: string;
+}
+
+export interface Member {
+  [key: string]: any;
+  path: string;
+  type: DocType;
+  id: string;
+  document?: any;
 }
 
 export default class MembersSplitMode extends MembersSiblingMode {

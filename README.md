@@ -32,8 +32,6 @@ Any issues please send to here:
 
 ## How Parallel to matching the part files of components
 
-
-
 1. Same named files will be treated as a set of files for the same component.
 
   ```text
@@ -160,7 +158,6 @@ Any issues please send to here:
 * **default:** `[]`
 * **built-in:** `['template{s}', 'tpl{s}', 'view{s}', 'page{s}', 'html{s}', ...tempalteExtNames]`
 * **description:** [Case insensitive] A set of folder-names or short-paths using for locate template files.
-
 
 ### - `parallel.scriptExtnames`
 

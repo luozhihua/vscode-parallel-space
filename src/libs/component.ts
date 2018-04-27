@@ -2,28 +2,28 @@
  * @Author: Colin Luo
  * @Date: 2018-04-17 06:30:39
  * @Last Modified by: Colin Luo <mail@luozhihua.com>
- * @Last Modified time: 2018-04-26 18:01:29
+ * @Last Modified time: 2018-04-27 17:11:20
  */
-import { default as Document } from './document';
+import * as fs from 'fs';
 import { config, DocType, SCRIPT, STYLE, TEMPLATE, TYPES } from '../config';
-import Members from './members';
+import Members, { Member } from './members';
 import event from '../event';
 import { createId } from './utils';
 
 export default interface Component {
   [key: string]: any;
-  SCRIPT: Document;
-  STYLE: Document;
-  TEMPLATE: Document;
+  [SCRIPT]: Member;
+  [STYLE]: Member;
+  [TEMPLATE]: Member;
 }
 
 export default class Component {
   protected _members: Members;
   public readonly path: string;
   public readonly id: string;
-  public [SCRIPT]: Document | undefined;
-  public [STYLE]: Document | undefined;
-  public [TEMPLATE]: Document | undefined;
+  public [SCRIPT]: Member;
+  public [STYLE]: Member;
+  public [TEMPLATE]: Member;
   public activated: boolean = false;
 
   constructor(root: string, path: string) {
@@ -35,6 +35,14 @@ export default class Component {
     }
     this.id = createId(this.path);
     this._members = new Members(root, this.path);
+
+    TYPES.forEach((type: DocType) => {
+      let file = this._members[type];
+
+      if (file) {
+        this[type] = { type: type, path: file, id: createId(file) };
+      }
+    });
     this.init();
   }
 
@@ -49,34 +57,59 @@ export default class Component {
 
   private init(): void {
     TYPES.forEach((type: DocType) => {
-      let { _members } = this;
+      let path = this.members[type];
 
-      let file = _members[type];
-
-      if (file) {
-        this[type] = new Document(type, file);
+      if (path) {
+        this[type] = { type: type, path: path, id: createId(path) };
       }
     });
   }
 
   // 更新子文件成员
-  public updateMembers(root: string, path: string) {
+  public async updateMembers(root: string, path: string) {
     let members = new Members(root, path);
+    let waiter: Promise<void>[] = [];
+    let removed: string[] = [];
 
     TYPES.forEach((type: DocType) => {
-      let newer = members[type];
-      let old = this.members[type];
-      let document = this[type];
+      let newPath = members[type];
+      let oldPath = this.members[type];
 
-      if (newer !== old) {
-        event.emit('destroyDocument', document, () => {});
+      if (newPath !== oldPath) {
+        removed.push(oldPath);
+        // waiter.push(this.closeMember(this[type]));
       }
     });
 
-    setTimeout(() => {
-      this.members = members;
-      this.init();
-    }, 2000);
+    this.members = members;
+    this.open();
+    removed.map(path => fs.unlinkSync(path));
+    await Promise.all(waiter);
+  }
+
+  public async closeMember(member: Member): Promise<any> {
+    let waiter = new Promise((resolve, reject) => {
+      event.once('close', closedPath => {
+        if (closedPath === member.path) {
+          resolve();
+        }
+      });
+
+      setTimeout(() => {
+        reject('timeout.');
+      }, 10000);
+    });
+
+    // 请求关闭文件
+    event.emit('requiredCloseDocument', member);
+
+    return waiter;
+  }
+
+  public async closeMembers(): Promise<void> {
+    for (let i = 0; i < TYPES.length; i++) {
+      await this.closeMember(this[TYPES[i]]);
+    }
   }
 
   /**
@@ -88,10 +121,10 @@ export default class Component {
     let columnIndex = 1;
 
     order.forEach((type: string) => {
-      let document: Document = this[type];
+      let member: Member = this[type];
 
-      if (document) {
-        event.emit('openDocument', document, columnIndex);
+      if (member) {
+        event.emit('openDocument', member, columnIndex);
         columnIndex += 1;
       }
     });
@@ -109,14 +142,14 @@ export default class Component {
   }
 
   public getOpenedMembers() {
-    let members: Document[] = [];
+    let members: Member[] = [];
 
     TYPES.forEach(type => {
-      let document = this[type];
-      let textDoc = document ? document.textDocument : undefined;
+      let member = this[type];
+      let textDoc = member ? member.textDocument : undefined;
 
-      if (document && textDoc && !textDoc.isClosed) {
-        members.push(document);
+      if (member && textDoc && !textDoc.isClosed) {
+        members.push(member);
       }
     });
 
