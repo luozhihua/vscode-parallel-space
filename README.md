@@ -1,6 +1,6 @@
 # Parallel Editor
 
-[![Licence](https://img.shields.io/github/license/luozhihua/vscode-parallel-space.svg)](https://github.com/HookyQR/VSCodeBeautify)  [![VS Code Marketplace](https://vsmarketplacebadge.apphb.com/version-short/ColinLuo.parallel-editor.svg) ![Rating](https://vsmarketplacebadge.apphb.com/rating/ColinLuo.parallel-editor.svg) ![Installs](https://vsmarketplacebadge.apphb.com/installs/ColinLuo.parallel-editor.svg)](https://marketplace.visualstudio.com/items?itemName=ColinLuo.parallel-space)
+[![Licence](https://img.shields.io/github/license/luozhihua/vscode-parallel-space.svg)](https://github.com/HookyQR/VSCodeBeautify)  [![VS Code Marketplace](https://vsmarketplacebadge.apphb.com/version-short/ColinLuo.parallel-space.svg) ![Rating](https://vsmarketplacebadge.apphb.com/rating/ColinLuo.parallel-space.svg) ![Installs](https://vsmarketplacebadge.apphb.com/installs/ColinLuo.parallel-space.svg)](https://marketplace.visualstudio.com/items?itemName=ColinLuo.parallel-space)
 
 ---
 An VSCode Extension for editing Vue SFC(Single-file Component), MFC(Multi-file Component) parts(tamplate/script/style) with multi columns layout, It’s layout looks like CodePen/JSFiddle/JSBin.

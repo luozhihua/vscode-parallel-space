@@ -3,7 +3,7 @@
   "displayName": "Parallel Space -FE Components Editor",
   "icon": "resources/icons/dark/icon.png",
   "description": "Edit component’s parts(tamplate/script/style) use multi columns layout looks like CodePen/JSFiddle/JSBin, used for Angular components, Vue TypeScript components, Vue SFC(single-file component) or other mvc/mvvm components which itself’s templates/scripts/styles parts each as standalone file or as Single-file.",
-  "version": "3.0.2",
+  "version": "3.0.3",
   "publisher": "ColinLuo",
   "author": "Colin Luo <mail@luozhihua.com>",
   "license": "MIT",
