@@ -29,14 +29,13 @@ export class ParallelExplorer {
   public mount(): void {
     commands.registerCommand('parallel.explorer.refresh', () => this.treeDataProvider.refresh());
     commands.registerCommand('parallel.explorer.reveal', () => this.reveal());
-    commands.registerCommand('parallel.explorer.open', (node: Uri, selectedNodes?: Uri[]) => {
+    commands.registerCommand('parallel.explorer.open', (node: Uri) => {
       let { parallel } = this;
       let root = parallel.getRoot(node);
 
       if (root) {
         parallel.open(root.uri.path, node.path);
       }
-      console.log(node, selectedNodes);
     });
   }
 

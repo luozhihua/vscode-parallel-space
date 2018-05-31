@@ -2,7 +2,7 @@
  * @Author: Colin Luo
  * @Date: 2018-04-17 06:30:10
  * @Last Modified by: Colin Luo <mail@luozhihua.com>
- * @Last Modified time: 2018-05-30 21:36:00
+ * @Last Modified time: 2018-05-31 17:28:44
  */
 import * as mm from 'micromatch';
 import { config, TYPES } from '../config';
@@ -11,7 +11,7 @@ import Component from './component';
 import Members, { Member } from './members';
 // import event from '../event';
 import VueSpliter from './vue-spliter';
-import { Uri, workspace, WorkspaceFolder, commands } from 'vscode';
+import { Uri, workspace, WorkspaceFolder, commands, window } from 'vscode';
 
 export default class Parallel {
   static closing: Map<string, boolean> = new Map();
@@ -76,7 +76,9 @@ export default class Parallel {
    * @event onDidChangeActiveTextEditor
    */
   public open(root: string, path: string, force = false) {
-    if (config.auto || force) {
+    if (!Parallel.isFileSupported(root, path)) {
+      window.showTextDocument(Uri.parse(`file://${path}`));
+    } else if (config.auto || force) {
       let component = this.openComponent(root, path);
       if (component) {
         this.rememberComponent(component);
