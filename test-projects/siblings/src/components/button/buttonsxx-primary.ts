@@ -4,6 +4,6 @@ export default class ButtonPrimary {
   }
 
   mounted() {
-    console.log('mounted!');
+    console.log('mounted-------!');
   }
 }

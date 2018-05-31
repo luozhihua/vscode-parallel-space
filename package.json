@@ -1,64 +1,116 @@
 {
-  "name": "parallel-editor",
-  "displayName": "Parallel Components Editor",
-  "icon": "icon.png",
-  "description":
-    "Edit component’s parts(tamplate/script/style) use multi columns layout looks like CodePen/JSFiddle/JSBin, used for Angular components, Vue TypeScript components, Vue SFC(single-file component) or other mvc/mvvm components which itself’s templates/scripts/styles parts each as standalone file or as Single-file.",
-  "version": "2.0.0",
+  "name": "parallel-space",
+  "displayName": "Parallel Space -FE Components Editor",
+  "icon": "resources/icons/dark/icon.png",
+  "description": "Edit component’s parts(tamplate/script/style) use multi columns layout looks like CodePen/JSFiddle/JSBin, used for Angular components, Vue TypeScript components, Vue SFC(single-file component) or other mvc/mvvm components which itself’s templates/scripts/styles parts each as standalone file or as Single-file.",
+  "version": "3.0.1",
   "publisher": "ColinLuo",
   "author": "Colin Luo <mail@luozhihua.com>",
   "license": "MIT",
+  "typings": [
+    "src/typings"
+  ],
   "engines": {
-    "vscode": "^1.22.0"
+    "vscode": "^1.23.0"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/luozhihua/vscode-parallel-components-editor.git"
+    "url": "https://github.com/luozhihua/vscode-parallel-space.git"
   },
   "bugs": {
-    "url":
-      "https://github.com/luozhihua/vscode-parallel-components-editor/issues"
+    "url": "https://github.com/luozhihua/vscode-parallel-space/issues"
   },
-  "categories": ["Programming Languages", "Formatters"],
-  "activationEvents": ["*"],
+  "categories": [
+    "Programming Languages"
+  ],
+  "activationEvents": [
+    "onView:parallel.explorer",
+    "*"
+  ],
   "main": "./out/extension",
-  "typings": "src/typings/index.d.ts",
   "contributes": {
-    "commands": [
-      {
-        "command": "parallel.enableForCurrentDocument",
-        "title": "Enable Parallel for activated document.",
+    "viewsContainers": {
+      "activitybar": [{
+        "id": "parallelExplorer",
+        "title": "Parallel Space",
+        "icon": "resources/icons/icon.svg"
+      }]
+    },
+    "views": {
+      "parallelExplorer": [{
+        "id": "parallelExplorer",
+        "name": "Parallel Space"
+      }]
+    },
+    "commands": [{
+        "command": "parallel.enable",
+        "title": "%parallelspace.enable%",
         "category": "Parallel",
         "icon": {
-          "light": "resources/icons/light/icon.png",
-          "dark": "resources/icons/dark/icon.png"
+          "light": "resources/icons/light/cmd-icon.png",
+          "dark": "resources/icons/dark/cmd-icon.png"
+        }
+      },
+      {
+        "command": "parallel.spreadCurrentDocument",
+        "title": "%parallelspace.openCurrDocUseParallelSpace%",
+        "category": "Parallel",
+        "icon": {
+          "light": "resources/icons/light/cmd-icon.png",
+          "dark": "resources/icons/dark/cmd-icon.png"
+        }
+      },
+      {
+        "command": "parallel.explorer.open",
+        "title": "%parallelspace.openWithParallelSpace%",
+        "category": "Parallel",
+        "icon": {
+          "light": "resources/icons/light/cmd-icon.png",
+          "dark": "resources/icons/dark/cmd-icon.png"
+        }
+      },
+      {
+        "command": "parallel.explorer.refresh",
+        "title": "%parallelspace.refresh%",
+        "category": "Parallel",
+        "icon": {
+          "light": "resources/icons/light/cmd-icon.png",
+          "dark": "resources/icons/dark/cmd-icon.png"
         }
       }
     ],
     "menus": {
-      "editor/title": [
-        {
-          "command": "parallel.enableForCurrentDocument",
-          "when": "config.parallel.enabled",
-          "group": "navigation"
-        }
-      ],
-      "editor/context": [
-        {
-          "command": "parallel.enableForCurrentDocument",
-          "when": "config.parallel.enabled",
-          "group": "navigation"
-        }
-      ]
+      "editor/title": [{
+        "command": "parallel.spreadCurrentDocument",
+        "group": "navigation"
+      }],
+      "editor/context": [{
+        "command": "parallel.spreadCurrentDocument",
+        "group": "navigation"
+      }],
+      "explorer/context": [{
+        "command": "parallel.explorer.open",
+        "when": "resourceIsFile",
+        "group": "navigation@100"
+      }],
+      "view/title": [{
+        "command": "parallel.explorer.refresh",
+        "when": "view == parallelExplorer",
+        "group": "navigation"
+      }],
+      "view/item/context": [{
+        "command": "parallel.explorer.open",
+        "when": "view == parallelExplorer && viewItem == parallel.item.component"
+      }]
     },
     "configuration": {
       "type": "object",
-      "title": "Parallel Editor",
+      "title": "Parallel Space",
       "properties": {
-        "parallel.enabled": {
+        "parallel.auto": {
           "type": "boolean",
           "default": true,
-          "description": "Wether enable Parallel Components Editor.",
+          "description": "Wether enable auto open file with Parallel Space.",
           "scope": "resource"
         },
         "parallel.componentFolders": {
@@ -66,9 +118,12 @@
           "items": {
             "type": "string"
           },
-          "default": [],
-          "description":
-            "[Case insensitive] A set of folder-names or short-paths using for locate components. Parallel built-ins: ['component[s]', 'view[s]', 'page[s]']",
+          "default": [
+            "component",
+            "view",
+            "page"
+          ],
+          "description": "[Case insensitive][match 's' suffix auto] A set of folder-names or short-paths using for locate components.",
           "scope": "resource"
         },
         "parallel.scriptFolders": {
@@ -76,9 +131,15 @@
           "items": {
             "type": "string"
           },
-          "default": [],
-          "description":
-            "[Case insensitive] A set of folder-names or short-paths using for locate script files when `cross-directory mode`. Parallel built-ins: ['script[s]', 'controller[s]', 'ctrl[s]',  'javascript[s]', 'typescript[s]', 'coffeescript[s]', ...scriptsExtNames]",
+          "default": [
+            "script",
+            "controller",
+            "ctrl",
+            "javascript",
+            "typescript",
+            "coffeescript"
+          ],
+          "description": "[Case insensitive][match 's' suffix auto] A set of folder-names or short-paths using for locate script files when `cross-directory mode`.",
           "scope": "resource"
         },
         "parallel.styleFolders": {
@@ -86,9 +147,10 @@
           "items": {
             "type": "string"
           },
-          "default": [],
-          "description":
-            "[Case insensitive] A set of folder-names or short-paths using for locate style files when `cross-directory mode`. Parallel built-ins: ['style[s]', ...styleExtNames]",
+          "default": [
+            "style"
+          ],
+          "description": "[Case insensitive][match 's' suffix auto] A set of folder-names or short-paths using for locate style files when `cross-directory mode`.",
           "scope": "resource"
         },
         "parallel.templateFolders": {
@@ -96,9 +158,14 @@
           "items": {
             "type": "string"
           },
-          "default": [],
-          "description":
-            "[Case insensitive] A set of folder-names or short-paths using for locate template files when `cross-directory mode`. Parallel built-ins: ['template[s]', 'tpl[s]', 'view[s]', 'page[s]', ['html[s]'], ...tempalteExtNames]",
+          "default": [
+            "template",
+            "tpl",
+            "view",
+            "page",
+            "html"
+          ],
+          "description": "[Case insensitive][match 's' suffix auto] A set of folder-names or short-paths using for locate template files when `cross-directory mode`.",
           "scope": "resource"
         },
         "parallel.scriptExts": {
@@ -107,8 +174,7 @@
             "type": "string"
           },
           "default": [],
-          "description":
-            "[Case insensitive] A set of extnames used for detect component's script file, The extnames you setted will be merged into the built-ins and deduplicated, built-in script extnames: ['.js', '.jsx', '.ts', '.tsx', '.mjs', '.es', '.es6', '.coffee', '.dart'], use `!` symbol to exlcude a built-in extName like `['!.mjs'] or use `['!built-in']` to exclude all build-ins.",
+          "description": "[Case insensitive] A set of extnames used for detect component's script file, The extnames you setted will be merged into the built-ins and deduplicated, built-in script extnames: ['.js', '.jsx', '.ts', '.tsx', '.mjs', '.es', '.es6', '.coffee', '.dart'], use `!` symbol to exlcude a built-in extName like `['!.mjs'] or use `['!built-in']` to exclude all build-ins.",
           "scope": "resource"
         },
         "parallel.styleExts": {
@@ -117,8 +183,7 @@
             "type": "string"
           },
           "default": [],
-          "description":
-            "[Case insensitive] A set of extnames used for detect component's style file, The extnames you setted will be merged into the built-ins and deduplicated, built-in style extnames: ['.css', '.scss', '.sass', '.less', '.styl', '.stylus'], use `!` symbol to exlcude a built-in extName like `['!.css'] or use `['!built-in']` to exclude all build-ins.",
+          "description": "[Case insensitive] A set of extnames used for detect component's style file, The extnames you setted will be merged into the built-ins and deduplicated, built-in style extnames: ['.css', '.scss', '.sass', '.less', '.styl', '.stylus'], use `!` symbol to exlcude a built-in extName like `['!.css'] or use `['!built-in']` to exclude all build-ins.",
           "scope": "resource"
         },
         "parallel.templateExts": {
@@ -127,8 +192,7 @@
             "type": "string"
           },
           "default": [],
-          "description":
-            "[Case insensitive] A set of extnames used for detect component's template file, The extnames you setted will be merged into the built-ins and deduplicated, built-in template extnames: ['.jade', '.pug', '.tpl', '.html', '.htm', '.xhtml', '.xml', '.mustache', '.ejs', '.def', '.dot', '.jst', '.handlebars', '.hbs', '.haml', '.dust', '.njk'], use `!` symbol to exlcude a built-in extName like `['!.xml'] or use `['!built-in']` to exclude all build-ins.",
+          "description": "[Case insensitive] A set of extnames used for detect component's template file, The extnames you setted will be merged into the built-ins and deduplicated, built-in template extnames: ['.jade', '.pug', '.tpl', '.html', '.htm', '.xhtml', '.xml', '.mustache', '.ejs', '.def', '.dot', '.jst', '.handlebars', '.hbs', '.haml', '.dust', '.njk'], use `!` symbol to exlcude a built-in extName like `['!.xml'] or use `['!built-in']` to exclude all build-ins.",
           "scope": "resource"
         },
         "parallel.columnsOrder": {
@@ -136,16 +200,18 @@
           "items": {
             "type": "string"
           },
-          "default": ["script", "template", "style"],
-          "description":
-            "Enable and adjust script, template, style panels’s layout order in the editor.",
+          "default": [
+            "script",
+            "template",
+            "style"
+          ],
+          "description": "Enable and adjust script, template, style panels’s layout order in the editor.",
           "scope": "resource"
         },
         "parallel.splitSingleFileComponentOnEditing": {
           "type": "boolean",
           "default": true,
-          "description":
-            "whether auto split templates/scripts/style tags in multiple columns view for a single-file component when open it.",
+          "description": "whether auto split templates/scripts/style tags in multiple columns view for a single-file component when open it.",
           "scope": "resource"
         },
         "parallel.singleFileComponentExts": {
@@ -153,9 +219,12 @@
           "items": {
             "type": "string"
           },
-          "default": [],
-          "description":
-            "[Case insensitive] A set of file extnames used for Single-file Component to enable split mode. built-in extnames: ['.vue', '.we', '.weex'].",
+          "default": [
+            ".vue",
+            ".we",
+            ".weex"
+          ],
+          "description": "[Case insensitive] A set of file extnames used for Single-file Component to enable split mode.",
           "scope": "resource"
         }
       }
@@ -172,21 +241,26 @@
     "@types/commondir": "^1.0.2",
     "@types/jsdom": "^11.0.6",
     "@types/klaw-sync": "^2.0.1",
-    "@types/lodash": "^4.14.107",
+    "@types/lodash": "^4.14.108",
     "@types/micromatch": "^3.1.0",
     "@types/mkdirp": "^0.5.2",
     "@types/mocha": "^5.2.0",
-    "@types/node": "^9.6.6",
+    "@types/node": "^10.0.6",
+    "@types/rimraf": "^2.0.2",
     "tslint": "^5.9.1",
     "typescript": "^2.8.3",
-    "vscode": "^1.1.14"
+    "vscode": "^1.1.16",
+    "vscode-nls-dev": "^3.0.9"
   },
   "dependencies": {
     "commondir": "^1.0.1",
     "jsdom": "^11.8.0",
+    "jsonc-parser": "^2.0.0",
     "klaw-sync": "^3.0.2",
-    "lodash": "^4.17.5",
+    "lodash": "^4.17.10",
     "micromatch": "^3.1.10",
-    "mkdirp": "^0.5.1"
+    "mkdirp": "^0.5.1",
+    "rimraf": "^2.6.2",
+    "vscode-nls": "^3.2.2"
   }
 }

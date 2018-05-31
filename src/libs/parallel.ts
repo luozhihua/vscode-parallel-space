@@ -2,33 +2,28 @@
  * @Author: Colin Luo
  * @Date: 2018-04-17 06:30:10
  * @Last Modified by: Colin Luo <mail@luozhihua.com>
- * @Last Modified time: 2018-04-27 16:28:37
+ * @Last Modified time: 2018-05-30 21:36:00
  */
 import * as mm from 'micromatch';
 import { config, TYPES } from '../config';
 import { createId } from './utils';
 import Component from './component';
 import Members, { Member } from './members';
-import event from '../event';
+// import event from '../event';
+import VueSpliter from './vue-spliter';
+import { Uri, workspace, WorkspaceFolder, commands } from 'vscode';
 
 export default class Parallel {
+  static closing: Map<string, boolean> = new Map();
   private components: Map<string, Component> = new Map();
 
-  constructor() {
-    this.initEvents();
-  }
+  constructor() {}
 
   private activatedComponent: Component | undefined;
   // private closeQueue: Promise<any>[] = [];
 
   dispose() {
     this.components.clear();
-  }
-
-  private initEvents(): void {
-    event.on('open', this.onOpen.bind(this));
-    event.on('close', this.onClose.bind(this));
-    event.on('active', this.onActive.bind(this));
   }
 
   private activate(component: Component): void {
@@ -45,21 +40,26 @@ export default class Parallel {
    * @param {string} path
    * @event onDidChangeActiveTextEditor
    */
-  private onActive(root: string, path: string) {
-    let type = Members.getTypeByPath(path);
-    let activated = this.activatedComponent;
-    let component = this.getComponentByPath(path);
+  // private onActive(root : string, path : string) {
+  public active(root: string, path: string) {
+    if (config.auto) {
+      let type = Members.getTypeByPath(path);
+      let activated = this.activatedComponent;
+      let component = this.getComponentByPath(path);
 
-    if (component) {
-      if (activated && activated[type] && activated[type].path !== path) {
+      if (component) {
+        if (activated && activated[type] && activated[type].path !== path) {
+          setTimeout(() => {
+            this.openComponent(root, path);
+          }, 100);
+        }
+      } else {
         setTimeout(() => {
-          this.openComponent(root, path);
+          // this.openComponent(root, path);
         }, 100);
       }
-    } else {
-      setTimeout(() => {
-        // this.openComponent(root, path);
-      }, 100);
+
+      commands.executeCommand('parallel.explorer.reveal');
     }
   }
 
@@ -68,19 +68,19 @@ export default class Parallel {
    * @param {string} path
    * @event onDidChangeActiveTextEditor
    */
-  private onOpen(root: string, path: string) {
-    // this.open(rootm path)
-  }
+  // private onOpen(root : string, path : string) {   this.open(root, path); }
 
   /**
    * @description 打开文件时触发的事件方法
    * @param {string} path
    * @event onDidChangeActiveTextEditor
    */
-  public open(root: string, path: string) {
-    let component = this.openComponent(root, path);
-    if (component) {
-      this.rememberComponent(component);
+  public open(root: string, path: string, force = false) {
+    if (config.auto || force) {
+      let component = this.openComponent(root, path);
+      if (component) {
+        this.rememberComponent(component);
+      }
     }
   }
 
@@ -89,17 +89,31 @@ export default class Parallel {
    * @param {string} path
    * @event onDidChangeActiveTextEditor
    */
-  private onClose(path: string) {
+  // private async onClose(path : string) {
+  public async close(path: string) {
     let component = this.getComponentByPath(path);
 
     if (component) {
       let type = Members.getTypeByPath(path);
-      let document: Document = component[type];
-
-      if (document) {
-        // document.isClosed = true;
+      let member: Member = component[type];
+      if (member && Members.isSplitedFile(member.path)) {
+        member.isClosed = true;
       }
     }
+  }
+
+  public getRoot(uri: Uri): WorkspaceFolder | undefined {
+    let isSplitedFile = Members.isSplitedFile(uri.path);
+    let fileUri = uri.with({ scheme: 'file' });
+    let root = isSplitedFile
+      ? {
+          index: 1,
+          name: '',
+          uri: Uri.parse(VueSpliter.tempRoot),
+        }
+      : workspace.getWorkspaceFolder(fileUri);
+
+    return root;
   }
 
   public getOpenedDocument(path: string) {
@@ -159,14 +173,7 @@ export default class Parallel {
    * @param {Uri} path
    */
   openComponent(root: string, path: string): any {
-    let { scriptDirs, styleDirs, templateDirs, componentDirs } = config;
-    let conf = [...scriptDirs, ...styleDirs, ...templateDirs, ...componentDirs];
-    let patterns = config.mergePatterns([], conf);
-    let matches = mm.match([path], `**/{${patterns.join(',')}}{s,}/**/*.*`, {
-      nocase: true,
-    });
-
-    if (matches && matches.length > 0) {
+    if (Parallel.isFileSupported(root, path)) {
       let component = this.getComponentByPath(path);
 
       if (!component) {
@@ -199,16 +206,8 @@ export default class Parallel {
       return false;
     }
 
-    let dirs = config
-      .mergePatterns(componentDirs, [
-        ...scriptDirs,
-        ...styleDirs,
-        ...templateDirs,
-      ])
-      .join(',');
-    let exts = config
-      .mergePatterns(sfcExts, [...scriptExts, ...styleExts, ...templateExts])
-      .join(',');
+    let dirs = config.mergePatterns(componentDirs, [...scriptDirs, ...styleDirs, ...templateDirs]).join(',');
+    let exts = config.mergePatterns(sfcExts, [...scriptExts, ...styleExts, ...templateExts]).join(',');
     let excludes = ['node_modules', 'build', 'dist', 'release'].join(',');
     let inludeOptions = {
       nocase: true,
@@ -220,8 +219,9 @@ export default class Parallel {
     };
 
     return (
-      !mm.isMatch(path, `${root}/**/{${excludes}}{s,}/**`, excludeOptions) &&
-      mm.isMatch(path, `${root}/**/{${dirs}}{s,}/**/*{${exts}}`, inludeOptions)
+      (!mm.isMatch(path, `${root}/**/{${excludes}}{s,}/**`, excludeOptions) &&
+        mm.isMatch(path, `${root}/**/{${dirs}}{s,}/**/*{${exts}}`, inludeOptions)) ||
+      mm.isMatch(path, `${VueSpliter.tempRoot}/**/{${dirs}}{s,}/**/*{${exts}}`, inludeOptions)
     );
   }
 }

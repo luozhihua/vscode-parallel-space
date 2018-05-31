@@ -9,5 +9,6 @@
   "docthis.includeMemberOfOnClassMembers": false,
   "docthis.includeMemberOfOnInterfaceMembers": false,
   "docthis.includeTypes": true,
-  "docthis.inferTypesFromNames": true
+  "docthis.inferTypesFromNames": true,
+  "editor.formatOnSave": true,
 }

@@ -2,12 +2,10 @@
  * @Author: Colin Luo
  * @Date: 2018-04-21 14:39:06
  * @Last Modified by: Colin Luo <mail@luozhihua.com>
- * @Last Modified time: 2018-04-26 07:31:36
+ * @Last Modified time: 2018-05-31 02:02:56
  */
-
 import * as fs from 'fs';
-import * as mm from 'micromatch';
-import { config, SCRIPT, STYLE, TEMPLATE, TYPES, DocType } from '../config';
+import { SCRIPT, STYLE, TEMPLATE, TYPES, DocType } from '../config';
 import { IPath } from './utils';
 import { MemberFiles } from './members-base';
 import MembersSiblingMode from './members-sibling';
@@ -25,7 +23,7 @@ export interface Member {
   path: string;
   type: DocType;
   id: string;
-  document?: any;
+  isClosed?: boolean;
 }
 
 export default class MembersSplitMode extends MembersSiblingMode {
@@ -56,10 +54,6 @@ export default class MembersSplitMode extends MembersSiblingMode {
     }
   }
 
-  static isSplitedFile(path: string): boolean {
-    return mm.isMatch(path, '**/.vscodeparallel/components/**', { dot: true });
-  }
-
   static getMainFileBySplitedFile(path: string): string {
     let subpath = IPath.parse(path).dir + '/.path';
     let mainFile;
@@ -68,18 +62,5 @@ export default class MembersSplitMode extends MembersSiblingMode {
       mainFile = fs.readFileSync(subpath, 'utf-8');
     }
     return mainFile ? mainFile.trim() : '';
-  }
-
-  static isSplitMode(path: string): boolean {
-    let { isSplitSFC, sfcExts } = config;
-    let exts = config.mergePatterns([], sfcExts);
-    let isSFC = mm.isMatch(path, `*{${exts.join(',')}}`, {
-      matchBase: true,
-    });
-    let isSplited = mm.isMatch(path, '**/.vscodeparallel/components/**', {
-      dot: true,
-    });
-
-    return isSFC && isSplitSFC && !isSplited;
   }
 }

@@ -1,17 +1,16 @@
 # Parallel Editor
 
-[![Licence](https://img.shields.io/github/license/luozhihua/vscode-parallel-components-editor.svg)](https://github.com/HookyQR/VSCodeBeautify)  [![VS Code Marketplace](https://vsmarketplacebadge.apphb.com/version-short/ColinLuo.parallel-editor.svg) ![Rating](https://vsmarketplacebadge.apphb.com/rating/ColinLuo.parallel-editor.svg) ![Installs](https://vsmarketplacebadge.apphb.com/installs/ColinLuo.parallel-editor.svg)](https://marketplace.visualstudio.com/items?itemName=ColinLuo.parallel-editor)
+[![Licence](https://img.shields.io/github/license/luozhihua/vscode-parallel-space.svg)](https://github.com/HookyQR/VSCodeBeautify)  [![VS Code Marketplace](https://vsmarketplacebadge.apphb.com/version-short/ColinLuo.parallel-editor.svg) ![Rating](https://vsmarketplacebadge.apphb.com/rating/ColinLuo.parallel-editor.svg) ![Installs](https://vsmarketplacebadge.apphb.com/installs/ColinLuo.parallel-editor.svg)](https://marketplace.visualstudio.com/items?itemName=ColinLuo.parallel-space)
 
 ---
 An VSCode Extension for editing Vue SFC(Single-file Component), MFC(Multi-file Component) parts(tamplate/script/style) with multi columns layout, It’s layout looks like CodePen/JSFiddle/JSBin.
-
 ---
 
 ## Issues
 
 Any issues please send to here:
 
-[![Licence](https://img.shields.io/github/issues/luozhihua/vscode-parallel-components-editor.svg)](https://github.com/luozhihua/vscode-parallel-components-editor/issues)
+[![Licence](https://img.shields.io/github/issues/luozhihua/vscode-parallel-space.svg)](https://github.com/luozhihua/vscode-parallel-space/issues)
 
 ## Features
 
@@ -131,32 +130,34 @@ Any issues please send to here:
 
 ## Parallel Editor Settings
 
+### - parallel.auto
+
+* **type:** `boolean`
+* **default:** `true`
+* **description:** Wether enable auto open file with Parallel Space.
+
 ### - parallel.componentFolders
 
 * **type:** `array`
-* **default:** `[]`
-* **built-in:** `['component{s}', 'view{s}', 'page{s}']`
+* **default:** `['component{s}', 'view{s}', 'page{s}']`
 * **description:** [Case insensitive] A set of folder-names or short-paths using for locate components.
 
 ### - parallel.scriptFolders
 
 * **type:** `array`
-* **default:** `[]`
-* **built-in:** `['script{s}', 'controller{s}', 'ctrl{s}',  'javascript{s}', 'typescript{s}', 'coffeescript{s}', ...scriptsExtNames]`
+* **default:** `['script{s}', 'controller{s}', 'ctrl{s}',  'javascript{s}', 'typescript{s}', 'coffeescript{s}', ...scriptsExtnames]`
 * **description:** [Case insensitive] A set of folder-names or short-paths using for locate script files.
 
 ### - parallel.styleFolders
 
 * **type:** `array`
-* **default:** `[]`
-* **built-in:** `['style{s}', ...styleExtNames]`
+* **default:** `['style{s}', ...styleExtnames]`
 * **description:** [Case insensitive] A set of folder-names or short-paths using for locate style files.
 
 ### - parallel.templateFolders
 
 * **type:** `array`
-* **default:** `[]`
-* **built-in:** `['template{s}', 'tpl{s}', 'view{s}', 'page{s}', 'html{s}', ...tempalteExtNames]`
+* **default:** `['template{s}', 'tpl{s}', 'view{s}', 'page{s}', 'html{s}', ...tempalteExtNames]`
 * **description:** [Case insensitive] A set of folder-names or short-paths using for locate template files.
 
 ### - `parallel.scriptExtnames`
@@ -225,7 +226,7 @@ Any issues please send to here:
 
 * **type:** `array`
 * **default:** `[]`
-* **built-in:** `['.css', '.scss', '.sass', '.less', '.styl', '.stylus' ]`
+* **built-in:** `['.jade', '.pug', '.tpl', '.html', '.htm', '.xhtml', '.xml', '.mustache', '.ejs', '.def', '.dot', '.jst', '.handlebars', '.hbs', '.haml', '.dust', '.njk']`
 * **description:** A set of extnames used for detect component's template file.
 
   > **Notes:**

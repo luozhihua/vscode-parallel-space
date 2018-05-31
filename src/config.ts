@@ -2,10 +2,11 @@
  * @Author: Colin Luo
  * @Date: 2018-04-17 06:30:34
  * @Last Modified by: Colin Luo <mail@luozhihua.com>
- * @Last Modified time: 2018-04-26 00:14:27
+ * @Last Modified time: 2018-05-31 16:29:33
  */
 import { workspace } from 'vscode';
 
+export const TEMP_DIR = `${process.env.HOME}/.vscodeparallel`;
 export type DocType = 'script' | 'style' | 'template';
 export enum DocTypes {
   SCRIPT = 'script',
@@ -23,38 +24,15 @@ export interface Exts {
   sfc?: RA;
 }
 
-const DEF_SCRIPT_DIR: RA = [
-  'script',
-  'controller',
-  'ctrl',
-  'javascript',
-  'typescript',
-  'coffeescript',
-];
+const DEF_SCRIPT_DIR: RA = ['script', 'controller', 'ctrl', 'javascript', 'typescript', 'coffeescript'];
 const DEF_STYLE_DIR: RA = ['style'];
 const DEF_TEMPLATE_DIR: RA = ['template', 'view', 'page'];
-const DEF_COMPONENT_DIR: RA = [
-  'component',
-  'view',
-  'page',
-  'src/app',
-  '.vscodeparallel',
-];
+const DEF_COMPONENT_DIR: RA = ['component', 'view', 'page', 'src/app', '.vscodeparallel'];
 const DEF_SFC_EXTS: RA = ['.vue', '.we', '.weex', '!.css.vue'];
 const DEF_COL_ORDER: RA = ['script', 'template', 'style'];
 const DEF_EXTS: Exts = {
-  [STYLE]: ['.css', '.scss', '.sass', '.less', '.styl', '.stylus', '.css.vue'],
-  [SCRIPT]: [
-    '.js',
-    '.jsx',
-    '.ts',
-    '.tsx',
-    '.mjs',
-    '.es',
-    '.es6',
-    '.coffee',
-    '.dart',
-  ],
+  [STYLE]: ['.css', '.scss', '.sass', '.less', '.styl', '.style', '.stylus', '.css.vue'],
+  [SCRIPT]: ['.js', '.jsx', '.ts', '.tsx', '.mjs', '.es', '.es6', '.coffee', '.dart'],
   [TEMPLATE]: [
     '.jade',
     '.pug',
@@ -84,13 +62,19 @@ export default class Config {
   public readonly defaultComponentDir: RA = DEF_COMPONENT_DIR;
   public readonly defaultSFCExts: RA = DEF_SFC_EXTS;
 
+  public get auto(): boolean {
+    return this.getWorkspaceConfig().auto;
+  }
+
   public get exts(): Exts {
-    return {
+    let exts = {
       style: this.styleExts,
       script: this.scriptExts,
       template: this.templateExts,
       sfc: this.sfcExts,
-    } as Exts;
+    };
+
+    return exts as Exts;
   }
 
   public get scriptDirs() {
@@ -99,7 +83,7 @@ export default class Config {
       return res.concat(cur.substr(1) as never);
     }, []);
 
-    return this.mergePatterns(DEF_SCRIPT_DIR, [...scriptFolders, ...exts]);
+    return scriptFolders || this.mergePatterns(DEF_SCRIPT_DIR, exts);
   }
 
   public get styleDirs() {
@@ -108,7 +92,7 @@ export default class Config {
       return res.concat(cur.substr(1) as never);
     }, []);
 
-    return this.mergePatterns(DEF_STYLE_DIR, [...styleFolders, ...exts]);
+    return styleFolders || this.mergePatterns(DEF_STYLE_DIR, exts);
   }
 
   public get templateDirs() {
@@ -117,13 +101,13 @@ export default class Config {
       return res.concat(cur.substr(1) as never);
     }, []);
 
-    return this.mergePatterns(DEF_TEMPLATE_DIR, [...templateFolders, ...exts]);
+    return templateFolders || this.mergePatterns(DEF_TEMPLATE_DIR, exts);
   }
 
   public get componentDirs() {
     let { componentFolders } = this.getWorkspaceConfig();
 
-    return this.mergePatterns(DEF_COMPONENT_DIR, componentFolders);
+    return componentFolders || DEF_COMPONENT_DIR;
   }
 
   public get styleExts(): string[] {
@@ -154,10 +138,7 @@ export default class Config {
   public get sfcExts(): string[] {
     let { singleFileComponentExts } = this.getWorkspaceConfig();
 
-    return this.mergePatterns(
-      DEF_SFC_EXTS as string[],
-      singleFileComponentExts,
-    );
+    return this.mergePatterns(DEF_SFC_EXTS as string[], singleFileComponentExts);
   }
 
   public get columnOrders(): string[] {
@@ -179,10 +160,7 @@ export default class Config {
    * @returns {string[]}
    * @memberof Config
    */
-  public mergePatterns(
-    defaults: string[] | RA,
-    patterns: string[] | RA,
-  ): string[] {
+  public mergePatterns(defaults: string[] | RA, patterns: string[] | RA): string[] {
     let allPatterns: string[];
 
     // 是否排除所有内置匹配规则
@@ -201,9 +179,7 @@ export default class Config {
           pattern = pattern.substr(1);
           return cleared.filter(item => item !== pattern);
         } else {
-          return cleared
-            .filter(item => item !== pattern)
-            .concat(pattern as never);
+          return cleared.filter(item => item !== pattern).concat(pattern as never);
         }
       }, []);
   }

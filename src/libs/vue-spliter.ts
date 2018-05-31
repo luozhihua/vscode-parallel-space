@@ -2,12 +2,12 @@
  * @Author: Colin Luo
  * @Date: 2018-04-21 14:39:06
  * @Last Modified by: Colin Luo <mail@luozhihua.com>
- * @Last Modified time: 2018-04-26 07:03:27
+ * @Last Modified time: 2018-05-31 16:30:27
  */
 import * as fs from 'fs';
 import * as jsdom from 'jsdom';
 import * as mkdirp from 'mkdirp';
-import { SCRIPT, STYLE, TEMPLATE, TYPES, DocType } from '../config';
+import { SCRIPT, STYLE, TEMPLATE, TYPES, DocType, TEMP_DIR } from '../config';
 import { IPath, createId } from './utils';
 import { LangID } from './members';
 import event from '../event';
@@ -55,11 +55,12 @@ const DEF_CONTETN = {
 };
 
 export default class VueSpliter {
+  static tempRoot: string = TEMP_DIR;
   public [SCRIPT]: string;
   public [STYLE]: string;
   public [TEMPLATE]: string;
   private tempDir: string;
-  private readonly root: string;
+  // private readonly root : string;
   private readonly path: string;
   private STYLESHEET: string = 'stylesheet';
   public parts: VueParts = {
@@ -141,35 +142,6 @@ export default class VueSpliter {
     return hasEmptyBlock;
   }
 
-  public xsplit() {
-    let doms: HTMLCollection = this.createDOMFromPath(this.path);
-
-    Array.from(doms).forEach((elem: Element): void => {
-      let content: string = elem.innerHTML.trim();
-      let [startWrapper, endWrapper] = this.getWrapper(elem);
-      let tagName: string = elem.nodeName.toLowerCase();
-      let lang = elem.getAttribute('lang') || langs[tagName];
-      let slice: VueSlice = {
-        startWrapper,
-        endWrapper,
-        content,
-        lang: lang,
-        ext: lang,
-        scope: !!elem.getAttribute('scope'),
-        type: (tagName === this.STYLESHEET ? STYLE : tagName) as DocType,
-        path: '',
-      };
-
-      if ([SCRIPT as DocType, TEMPLATE as DocType].includes(slice.type)) {
-        this.parts[slice.type] = slice;
-      } else if (slice.type === STYLE) {
-        this.parts[STYLE].push(slice);
-      }
-    });
-
-    this.createFile();
-  }
-
   /**
    * @description Merge sub files into Single-file Component
    */
@@ -184,13 +156,7 @@ export default class VueSpliter {
           parts.push(fs.readFileSync(slice.path, 'utf-8'));
         });
       } else if (part) {
-        parts.push(
-          [
-            (<VueSlice>part).startWrapper,
-            fs.readFileSync((<VueSlice>part).path, 'utf-8'),
-            (<VueSlice>part).endWrapper,
-          ].join('\n'),
-        );
+        parts.push([part.startWrapper, fs.readFileSync(part.path, 'utf-8'), part.endWrapper].join('\n'));
       }
     });
 
@@ -199,7 +165,7 @@ export default class VueSpliter {
 
   private mkdir() {
     let id = createId(this.path);
-    let path = `${this.root}/.vscodeparallel/components/${id}`;
+    let path = `${VueSpliter.tempRoot}/components/${id}`;
 
     mkdirp.sync(path);
 

@@ -7,15 +7,15 @@ export default {
   mounted() {
     console.log('sadasd9999ddd搜索99');
   },
-};
+}
 </script>
 
 <style lang="less">
-  .dialog {
-    width: 1044422px;
+.dialog {
+    width: 299999px;
 
     header {
-      height: 40px;
+      height: 4990px;
       background: red;
     }
 
@@ -31,9 +31,10 @@ export default {
   }
 </style>
 
+
 <template lang="jade">
 <div class="dialog">
-    <header>headeryyy</header>
+    <header>收拾收拾是sh</header>
     <main>
       <p>asd</p>
       <ul>

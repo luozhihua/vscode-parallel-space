@@ -1,14 +1,16 @@
 /*
- * @Author: Colin Luo
- * @Date: 2018-04-17 06:30:39
+* @Author: Colin Luo
+* @Date: 2018-04-17 06:30:39
  * @Last Modified by: Colin Luo <mail@luozhihua.com>
- * @Last Modified time: 2018-04-27 17:11:20
- */
+ * @Last Modified time: 2018-05-30 11:48:57
+*/
 import * as fs from 'fs';
 import { config, DocType, SCRIPT, STYLE, TEMPLATE, TYPES } from '../config';
 import Members, { Member } from './members';
 import event from '../event';
 import { createId } from './utils';
+// import EditorReferer from './editor-referers';
+// import Parallel from './parallel';
 
 export default interface Component {
   [key: string]: any;
@@ -85,31 +87,6 @@ export default class Component {
     this.open();
     removed.map(path => fs.unlinkSync(path));
     await Promise.all(waiter);
-  }
-
-  public async closeMember(member: Member): Promise<any> {
-    let waiter = new Promise((resolve, reject) => {
-      event.once('close', closedPath => {
-        if (closedPath === member.path) {
-          resolve();
-        }
-      });
-
-      setTimeout(() => {
-        reject('timeout.');
-      }, 10000);
-    });
-
-    // 请求关闭文件
-    event.emit('requiredCloseDocument', member);
-
-    return waiter;
-  }
-
-  public async closeMembers(): Promise<void> {
-    for (let i = 0; i < TYPES.length; i++) {
-      await this.closeMember(this[TYPES[i]]);
-    }
   }
 
   /**

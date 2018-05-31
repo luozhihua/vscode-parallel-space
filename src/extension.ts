@@ -2,8 +2,11 @@
  * @Author: Colin Luo
  * @Date: 2018-04-17 06:30:10
  * @Last Modified by: Colin Luo <mail@luozhihua.com>
- * @Last Modified time: 2018-04-27 16:57:21
+ * @Last Modified time: 2018-05-31 16:59:21
  */
+import * as nls from 'vscode-nls';
+const lang = JSON.parse(process.env.VSCODE_NLS_CONFIG || 'null');
+nls.config(lang)();
 
 import {
   workspace,
@@ -18,10 +21,12 @@ import {
 } from 'vscode';
 
 import Parallel from './libs/parallel';
+import { ParallelExplorer } from './explorer/parallel-explorer';
 import { createId } from './libs/utils';
 import event from './event';
 import Members, { Member } from './libs/members';
 import VueSpliter from './libs/vue-spliter';
+// import EditorReferers from './libs/editor-referers';
 
 let disposable: Disposable;
 
@@ -29,72 +34,76 @@ export function activate(context: ExtensionContext) {
   let subscriptions: Disposable[] = [];
   let parallel = new Parallel();
 
-  commands.registerTextEditorCommand(
-    'parallel.enableForCurrentDocument',
-    (editor: TextEditor) => {
-      if (editor !== undefined) {
-        let uri = editor.document.uri;
-        let root = workspace.getWorkspaceFolder(uri);
+  new ParallelExplorer(context, parallel).mount();
 
-        if (root) {
-          parallel.open(root.uri.path, uri.path);
-        }
+  commands.registerTextEditorCommand('parallel.spreadCurrentDocument', (editor: TextEditor) => {
+    if (editor !== undefined) {
+      let uri = editor.document.uri;
+      let root = workspace.getWorkspaceFolder(uri);
+
+      if (root) {
+        parallel.open(root.uri.path, uri.path, true);
       }
-      console.log(window.activeTextEditor);
-    },
-  );
+    }
+  });
 
-  event.on(
-    'openDocument',
-    async (member: Member, columnIndex: number = 1): Promise<void> => {
-      let visibles = window.visibleTextEditors;
-      let path = Uri.parse(`file://${member.path}`);
-      let isVisibled = false;
-      let options = {
-        preview: false,
-        viewColumn: columnIndex,
-        preserveFocus: true,
-      };
+  event.on('openDocument', async (member: Member, columnIndex: number = 1): Promise<void> => {
+    let visibles = window.visibleTextEditors;
+    let path = Uri.parse(`file://${member.path}`);
+    let isVisibled = false;
+    let options = {
+      preview: false,
+      viewColumn: columnIndex,
+      preserveFocus: true,
+    };
 
-      visibles.forEach(cur => {
-        if (cur.document.uri.path === member.path) {
-          isVisibled = true;
-        }
-      });
-
-      if (!isVisibled) {
-        let textDoc = await window.showTextDocument(path, options);
-
-        member.textDocument = textDoc;
+    visibles.forEach(cur => {
+      if (cur.document.uri.path === member.path) {
+        isVisibled = true;
       }
-    },
-  );
+    });
+
+    if (!isVisibled) {
+      let textDoc = await window.showTextDocument(path, options);
+
+      member.textDocument = textDoc;
+    }
+  });
 
   // 关闭一个文档
-  event.on(
-    'requiredCloseDocument',
-    async (member: Member, columnIndex?: number) => {
-      await window.showTextDocument(Uri.parse(`file://${member.path}`), {
-        preview: false,
-        preserveFocus: true,
-        viewColumn: columnIndex || member.textDocument.viewColumn,
-      });
+  event.on('requiredCloseDocument', async (path: string, columnIndex?: number) => {
+    await window.showTextDocument(Uri.parse(`file://${path}`), {
+      preview: false,
+      preserveFocus: true,
+      viewColumn: columnIndex,
+    });
 
-      await commands.executeCommand('workbench.action.closeActiveEditor');
-      event.emit('close', member.path);
-      console.log(22222);
-    },
-  );
+    await commands.executeCommand('workbench.action.closeActiveEditor');
+    // event.emit('close', path);
+    parallel.close(path);
+  });
 
   // 关闭文档
   workspace.onDidCloseTextDocument(
     (doc: TextDocument) => {
       let uri = doc.uri;
-      let root = workspace.getWorkspaceFolder(uri);
+      let isSplitedFile = Members.isSplitedFile(uri.path);
+      let root = isSplitedFile
+        ? {
+            uri: Uri.parse(VueSpliter.tempRoot),
+          }
+        : workspace.getWorkspaceFolder(uri);
+
+      if (isSplitedFile && uri.scheme === 'git') {
+        uri = Uri.parse('file://' + uri.path.replace(/\.git$/, ''));
+      }
+
+      // EditorReferers.remove(doc);
 
       // 检测文件是否被Parallel所支持
-      if (root && Parallel.isFileSupported(root.uri.path, uri.path)) {
-        event.emit('close', uri.path);
+      if (uri.scheme === 'file' && root && Parallel.isFileSupported(root.uri.path, uri.path)) {
+        // event.emit('close', uri.path);
+        parallel.close(uri.path);
       }
     },
     parallel,
@@ -105,11 +114,11 @@ export function activate(context: ExtensionContext) {
   workspace.onDidOpenTextDocument(
     (doc: TextDocument) => {
       let uri = doc.uri;
-      let root = workspace.getWorkspaceFolder(uri);
+      let root = parallel.getRoot(uri);
 
       // 检测文件是否被Parallel所支持
-      if (root && Parallel.isFileSupported(root.uri.path, uri.path)) {
-        event.emit('open', root.uri.path, uri.path);
+      if (uri.scheme === 'file' && root && Parallel.isFileSupported(root.uri.path, uri.path)) {
+        // parallel.open(root.uri.path, uri.path);
       }
     },
     parallel,
@@ -121,27 +130,30 @@ export function activate(context: ExtensionContext) {
     async (editor?: TextEditor): Promise<void> => {
       if (editor !== undefined) {
         let uri = editor.document.uri;
-        let root = workspace.getWorkspaceFolder(uri);
+        let isSplitedFile = Members.isSplitedFile(uri.path);
         let openedDoc = parallel.getOpenedDocument(uri.path);
-        // let isSplitMode = Parallel.isSplitMode(uri.path);
+        let root = isSplitedFile
+          ? {
+              uri: Uri.parse(VueSpliter.tempRoot),
+            }
+          : workspace.getWorkspaceFolder(uri);
 
         if (
           // isSplitMode ||
           openedDoc &&
           openedDoc.viewColumn !== editor.viewColumn
         ) {
-          // let cmds = [
-          //   'workbench.action.moveEditorToFirstGroup',
-          //   'workbench.action.moveEditorToSecondGroup',
-          //   'workbench.action.moveEditorToThirdGroup',
-          // ];
-          // await commands.executeCommand(cmds[openedDoc.viewColumn - 1]);
-          await commands.executeCommand('workbench.action.closeActiveEditor');
+          // let cmds = [   'workbench.action.moveEditorToFirstGroup',
+          // 'workbench.action.moveEditorToSecondGroup',
+          // 'workbench.action.moveEditorToThirdGroup', ]; await
+          // commands.executeCommand(cmds[openedDoc.viewColumn - 1]);
+          // await commands.executeCommand('workbench.action.closeActiveEditor');
         }
 
         // 检测文件是否被Parallel所支持
         if (root && Parallel.isFileSupported(root.uri.path, uri.path)) {
-          event.emit('active', root.uri.path, uri.path);
+          // event.emit('active', root.uri.path, uri.path);
+          parallel.active(root.uri.path, uri.path);
         }
       }
     },
@@ -150,18 +162,17 @@ export function activate(context: ExtensionContext) {
   );
 
   // 一般情况下鼠标点击或者改变光标位置时会调用
-  window.onDidChangeTextEditorSelection(
-    (changeEvent: TextEditorSelectionChangeEvent) => {
-      let document = changeEvent.textEditor.document;
-      let path = document.uri.path;
-      let component = parallel.getComponentByPath(path);
-      let root = workspace.getWorkspaceFolder(document.uri);
+  window.onDidChangeTextEditorSelection((changeEvent: TextEditorSelectionChangeEvent) => {
+    let document = changeEvent.textEditor.document;
+    let path = document.uri.path;
+    let component = parallel.getComponentByPath(path);
+    let root = parallel.getRoot(document.uri);
 
-      if (root && !component && Parallel.isFileSupported(root.uri.path, path)) {
-        event.emit('open', root.uri.path, path);
-      }
-    },
-  );
+    if (root && component && Parallel.isFileSupported(root.uri.path, path)) {
+      // event.emit('open', root.uri.path, path);
+      parallel.open(root.uri.path, path);
+    }
+  });
 
   // 保存文件
   workspace.onDidSaveTextDocument((doc: TextDocument) => {

@@ -1,7 +1,11 @@
-// import * as fs from 'fs';
+import { MemberFiles } from './members-base';
 import * as mm from 'micromatch';
+import * as path from 'path';
+import * as commondir from 'commondir';
 import { config, DocType, SCRIPT, STYLE, TEMPLATE, TYPES } from '../config';
 import { IPath } from './utils';
+
+export const store: any = {};
 
 export interface MemberFiles {
   [key: string]: any;
@@ -10,6 +14,12 @@ export interface MemberFiles {
   [SCRIPT]: string[];
   [STYLE]: string[];
   [TEMPLATE]: string[];
+}
+
+export interface MemberFilesX {
+  [key: string]: any;
+  mode: string;
+  files: string[];
 }
 
 export default abstract class Members {
@@ -22,13 +32,20 @@ export default abstract class Members {
   protected abstract getCandidates(): MemberFiles;
 
   constructor(root: string, path: string) {
+    let grouped = store[path];
+
     this.path = path;
     this.root = root;
-    this.files = this.resolveFiles();
+    this.files = grouped || this.resolveFiles();
 
-    TYPES.forEach(type => {
-      this[type] = this.files[type][0] as DocType;
-    });
+    if (!grouped) {
+      TYPES.forEach(type => {
+        store[path] = store[path] || {};
+        store[path][type] = this.files[type][0] as DocType;
+
+        this[type] = this.files[type][0] as DocType;
+      });
+    }
   }
 
   protected resolveFiles(): MemberFiles {
@@ -91,8 +108,7 @@ export default abstract class Members {
           })
         ) {
           // index.js + btn.html | dir.html | other.html | btn.css
-          // 打开的文件名为index.[*]时，其他文件如果
-          weight3.push(sibling.fullpath);
+          // 打开的文件名为index.[*]时，其他文件如果 weight3.push(sibling.fullpath);
         }
       });
 
@@ -101,13 +117,45 @@ export default abstract class Members {
   }
 
   /**
+   * 过滤掉与被点击文件不相关的文件
+   */
+  protected filter(files: string[]): string[] {
+    let pathname = this.getReversePathname(this.path);
+
+    return files.reduce((result: string[], file) => {
+      let shortPath = this.getReversePathname(file);
+
+      if (commondir([pathname, shortPath]) !== path.posix.sep) {
+        result.push(file);
+      }
+
+      return result;
+    }, []);
+  }
+
+  /**
+   * 获取路径并反转路径，以便于比较是否具有相同的相对路径
+   */
+  private getReversePathname(filepath: string): string {
+    return (
+      path.posix.sep +
+      filepath
+        .replace(/\.(\w+)$/, '')
+        .split(path.posix.sep)
+        .reverse()
+        .join(path.posix.sep)
+    );
+  }
+
+  /**
    * @description 是否是脚本文件
    * @param {String} URI of a Document
    * @returns {boolean}
    */
   static isScript(uri: string): boolean {
-    let exts = config.scriptExts.join(',');
-    return mm.any(uri, `**/*{${exts}}`, { dot: true });
+    let exts = config.scriptExts.join('|').replace(/\./g, '');
+
+    return new RegExp(`\\\.(${exts})$`, 'i').test(uri);
   }
 
   /**
@@ -116,9 +164,9 @@ export default abstract class Members {
    * @returns {boolean}
    */
   static isStyle(uri: string): boolean {
-    let exts = config.styleExts.join(',');
+    let exts = config.styleExts.join('|').replace(/\./g, '');
 
-    return mm.any(uri, `**/*{${exts}}`, { dot: true });
+    return new RegExp(`\\\.(${exts})$`, 'i').test(uri);
   }
 
   /**
@@ -127,18 +175,50 @@ export default abstract class Members {
    * @returns {Boolean}
    */
   static isTemplate(uri: string): Boolean {
-    let exts = config.templateExts.join(',');
+    let exts = config.templateExts.join('|').replace(/\./g, '');
 
-    return mm.isMatch(uri, `**/*{${exts}}`, { dot: true });
+    return new RegExp(`\\\.(${exts})$`, 'i').test(uri);
   }
 
-  public static getTypeByPath(uri: string): string {
-    return Members.isScript(uri)
+  // static getMembersByPath(dir: string): MemberFiles[] {
+  //   let files = fs.readdirSync(dir);
+  //   let groups: any = [];
+
+  //   files.forEach((file: string) => {
+  //     let members = store[file];
+
+  //     if (members) {
+  //       groups.push(members);
+  //     }
+  //   });
+
+  //   return groups as MemberFiles[];
+  // }
+
+  public static getTypeByPath(uri: string): DocType {
+    let type = Members.isScript(uri)
       ? (SCRIPT as DocType)
       : Members.isStyle(uri)
         ? (STYLE as DocType)
         : Members.isTemplate(uri)
           ? (TEMPLATE as DocType)
           : '';
+    return type as DocType;
+  }
+
+  static isSplitedFile(path: string): boolean {
+    return path.includes('/.vscodeparallel/components/');
+  }
+
+  static isSplitMode(path: string): boolean {
+    let { isSplitSFC, sfcExts } = config;
+    let exts = config
+      .mergePatterns([], sfcExts)
+      .join('|')
+      .replace(/\./g, '');
+    let isSFC = new RegExp(`\\\.(${exts})$`, 'i').test(path);
+    let isSplited = Members.isSplitedFile(path);
+
+    return isSFC && isSplitSFC && !isSplited;
   }
 }

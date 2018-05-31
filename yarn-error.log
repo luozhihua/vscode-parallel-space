@@ -1,5 +1,5 @@
 Arguments: 
-  /usr/local/bin/node /usr/local/bin/yarn add mkdirp
+  /usr/local/bin/node /usr/local/bin/yarn add @types/jsonc-parser
 
 PATH: 
   /usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/Applications/VMware Fusion.app/Contents/Public:/usr/local/go/bin:/usr/local/share/dotnet:/opt/X11/bin:/Library/Frameworks/Mono.framework/Versions/Current/Commands:/opt/local/sbin:/opt/local/bin:/usr/local/mysql/bin:/Applications/mongodb/bin:/Library/Frameworks/Python.framework/Versions/3.4/bin:/Users/colin/bin:/Users/colin/.bin:/Users/colin/.jenv/bin:/usr/local/go//bin:/usr/local/flutter/bin:/Users/colin/sdk/Android/platform-tools:/Users/colin/sdk/Android/tools:/Users/colin/sdk/apache-maven-3.3.3/bin:/Library/Java/JavaVirtualMachines/jdk1.8.0_91.jdk/Contents/Home/bin:/Users/colin/sdk/go/bin:/Users/colin/Projects/golang/bin:/opt/pkg_uninstaller
@@ -15,61 +15,111 @@ Platform:
 
 npm manifest: 
   {
-    "name": "parallel-editor",
-    "displayName": "Parallel Components Editor",
+    "name": "parallel-space",
+    "displayName": "Parallel Space -FE Components Editor",
     "icon": "icon.png",
-    "description":
-      "Edit component’s parts(tamplate/script/style) use 3 columns view, It’s layout looks like CodePen/JSFiddle/JSBin, used for Angular components, Vue TypeScript components or other mvc/mvvm components which itself’s templates/scripts/styles parts each as single file wrappered with in the same folder.",
-    "version": "1.0.0",
+    "description": "Edit component’s parts(tamplate/script/style) use multi columns layout looks like CodePen/JSFiddle/JSBin, used for Angular components, Vue TypeScript components, Vue SFC(single-file component) or other mvc/mvvm components which itself’s templates/scripts/styles parts each as standalone file or as Single-file.",
+    "version": "2.0.0",
     "publisher": "ColinLuo",
     "author": "Colin Luo <mail@luozhihua.com>",
     "license": "MIT",
+    "typings": [
+      "src/typings"
+    ],
     "engines": {
-      "vscode": "^1.22.0"
+      "vscode": "^1.22.2"
     },
     "repository": {
       "type": "git",
       "url": "https://github.com/luozhihua/vscode-parallel-components-editor.git"
     },
     "bugs": {
-      "url":
-        "https://github.com/luozhihua/vscode-parallel-components-editor/issues"
+      "url": "https://github.com/luozhihua/vscode-parallel-components-editor/issues"
     },
-    "categories": ["Language Packs", "Formatters"],
-    "activationEvents": ["*"],
+    "categories": [
+      "Languages",
+      "Formatters"
+    ],
+    "activationEvents": [
+      "onView:parallel.explorer",
+      "*"
+    ],
     "main": "./out/extension",
     "contributes": {
+      "views": {
+        "explorer": [
+          {
+            "id": "parallel.explorer",
+            "name": "Parallel Space"
+          }
+        ]
+      },
+      "commands": [
+        {
+          "command": "parallel.spreadCurrentDocument",
+          "title": "Enable Parallel for activated document.",
+          "category": "Parallel",
+          "icon": {
+            "light": "resources/icons/light/icon.png",
+            "dark": "resources/icons/dark/icon.png"
+          }
+        },
+        {
+          "command": "parallel.explorer.open",
+          "title": "Open component with Parallels.",
+          "category": "Parallel",
+          "icon": {
+            "light": "resources/icons/light/icon.png",
+            "dark": "resources/icons/dark/icon.png"
+          }
+        },
+        {
+          "command": "parallel.explorer.refresh",
+          "title": "Refresh Parallel Space.",
+          "category": "Parallel",
+          "icon": {
+            "light": "resources/icons/light/icon.png",
+            "dark": "resources/icons/dark/icon.png"
+          }
+        }
+      ],
+      "menus": {
+        "editor/title": [
+          {
+            "command": "parallel.spreadCurrentDocument",
+            "when": "config.parallel.enabled",
+            "group": "navigation"
+          }
+        ],
+        "editor/context": [
+          {
+            "command": "parallel.spreadCurrentDocument",
+            "when": "config.parallel.enabled",
+            "group": "navigation"
+          }
+        ],
+        "view/title": [
+          {
+            "command": "parallel.explorer.refresh",
+            "when": "view == parallelTree",
+            "group": "navigation"
+          }
+        ],
+        "view/item/context": [
+          {
+            "command": "parallel.explorer.open",
+            "when": "view == parallelTree && viewItem == parallelComponent"
+          }
+        ]
+      },
       "configuration": {
         "type": "object",
-        "title": "Parallel Editor",
+        "title": "Parallel Space",
         "properties": {
-          "parallel.testcase.exts": {
-            "type": "array",
-            "default": [".spec.js", ".test.ts"],
-            "description": ""
-          },
-          "parallel.testcase.dirs": {
-            "type": "array",
-            "default": ["src/test", "test"],
-            "description": ""
-          },
-          "parallel.testcase.enable": {
-            "type": "boolean",
-            "default": true,
-            "description": ""
-          },
-          "parallel.enable": {
+          "parallel.enabled": {
             "type": "boolean",
             "default": true,
             "description": "Wether enable Parallel Components Editor.",
-            "scope": "resource"
-          },
-          "parallel.mode": {
-            "type": "string",
-            "enum": ["same-directory", "cross-directory"],
-            "default": ["same-directory"],
-            "description":
-              "If your folded script & style & template files grouped by component names, please use *`same-directory`* mode. <br/> If your put all style files in a dir named `styles`, all script files in a dir named `scrips` and all template files in a dir named `views`, please use *`cross-directory`* mode.",
             "scope": "resource"
           },
           "parallel.componentFolders": {
@@ -78,38 +128,34 @@ npm manifest:
               "type": "string"
             },
             "default": [],
-            "description":
-              "[Case insensitive] A set of folder-names or short-paths using for locate components. Parallel built-ins: ['component[s]', 'view[s]', 'page[s]']",
+            "description": "[Case insensitive] A set of folder-names or short-paths using for locate components. Parallel built-ins: ['component[s]', 'view[s]', 'page[s]']",
             "scope": "resource"
           },
-          "parallel.scriptFoldersForCrossMode": {
+          "parallel.scriptFolders": {
             "type": "array",
             "items": {
               "type": "string"
             },
             "default": [],
-            "description":
-              "[Case insensitive] A set of folder-names or short-paths using for locate script files when `cross-directory mode`. Parallel built-ins: ['script[s]', 'controller[s]', 'ctrl[s]',  'javascript[s]', 'typescript[s]', 'coffeescript[s]', ...scriptsExtNames]",
+            "description": "[Case insensitive] A set of folder-names or short-paths using for locate script files when `cross-directory mode`. Parallel built-ins: ['script[s]', 'controller[s]', 'ctrl[s]',  'javascript[s]', 'typescript[s]', 'coffeescript[s]', ...scriptsExtNames]",
             "scope": "resource"
           },
-          "parallel.styleFoldersForCrossMode": {
+          "parallel.styleFolders": {
             "type": "array",
             "items": {
               "type": "string"
             },
             "default": [],
-            "description":
-              "[Case insensitive] A set of folder-names or short-paths using for locate style files when `cross-directory mode`. Parallel built-ins: ['style[s]', ...styleExtNames]",
+            "description": "[Case insensitive] A set of folder-names or short-paths using for locate style files when `cross-directory mode`. Parallel built-ins: ['style[s]', ...styleExtNames]",
             "scope": "resource"
           },
-          "parallel.templateFoldersForCrossMode": {
+          "parallel.templateFolders": {
             "type": "array",
             "items": {
               "type": "string"
             },
             "default": [],
-            "description":
-              "[Case insensitive] A set of folder-names or short-paths using for locate template files when `cross-directory mode`. Parallel built-ins: ['template[s]', 'tpl[s]', 'view[s]', 'page[s]', ['html[s]'], ...tempalteExtNames]",
+            "description": "[Case insensitive] A set of folder-names or short-paths using for locate template files when `cross-directory mode`. Parallel built-ins: ['template[s]', 'tpl[s]', 'view[s]', 'page[s]', ['html[s]'], ...tempalteExtNames]",
             "scope": "resource"
           },
           "parallel.scriptExts": {
@@ -118,8 +164,7 @@ npm manifest:
               "type": "string"
             },
             "default": [],
-            "description":
-              "[Case insensitive] A set of extnames used for detect component's script file, The extnames you setted will be merged into the built-ins and deduplicated, built-in script extnames: ['.js', '.jsx', '.ts', '.tsx', '.mjs', '.es', '.es6', '.coffee', '.dart'], use `!` symbol to exlcude a built-in extName like `['!.mjs'] or use `['!built-in']` to exclude all build-ins.",
+            "description": "[Case insensitive] A set of extnames used for detect component's script file, The extnames you setted will be merged into the built-ins and deduplicated, built-in script extnames: ['.js', '.jsx', '.ts', '.tsx', '.mjs', '.es', '.es6', '.coffee', '.dart'], use `!` symbol to exlcude a built-in extName like `['!.mjs'] or use `['!built-in']` to exclude all build-ins.",
             "scope": "resource"
           },
           "parallel.styleExts": {
@@ -128,8 +173,7 @@ npm manifest:
               "type": "string"
             },
             "default": [],
-            "description":
-              "[Case insensitive] A set of extnames used for detect component's style file, The extnames you setted will be merged into the built-ins and deduplicated, built-in style extnames: ['.css', '.scss', '.sass', '.less', '.styl', '.stylus'], use `!` symbol to exlcude a built-in extName like `['!.css'] or use `['!built-in']` to exclude all build-ins.",
+            "description": "[Case insensitive] A set of extnames used for detect component's style file, The extnames you setted will be merged into the built-ins and deduplicated, built-in style extnames: ['.css', '.scss', '.sass', '.less', '.styl', '.stylus'], use `!` symbol to exlcude a built-in extName like `['!.css'] or use `['!built-in']` to exclude all build-ins.",
             "scope": "resource"
           },
           "parallel.templateExts": {
@@ -138,25 +182,26 @@ npm manifest:
               "type": "string"
             },
             "default": [],
-            "description":
-              "[Case insensitive] A set of extnames used for detect component's template file, The extnames you setted will be merged into the built-ins and deduplicated, built-in template extnames: ['.jade', '.pug', '.tpl', '.html', '.htm', '.xhtml', '.xml', '.mustache', '.ejs', '.def', '.dot', '.jst', '.handlebars', '.hbs', '.haml', '.dust', '.njk'], use `!` symbol to exlcude a built-in extName like `['!.xml'] or use `['!built-in']` to exclude all build-ins.",
+            "description": "[Case insensitive] A set of extnames used for detect component's template file, The extnames you setted will be merged into the built-ins and deduplicated, built-in template extnames: ['.jade', '.pug', '.tpl', '.html', '.htm', '.xhtml', '.xml', '.mustache', '.ejs', '.def', '.dot', '.jst', '.handlebars', '.hbs', '.haml', '.dust', '.njk'], use `!` symbol to exlcude a built-in extName like `['!.xml'] or use `['!built-in']` to exclude all build-ins.",
             "scope": "resource"
           },
-          "parallel.columnsEnabledAndOrders": {
+          "parallel.columnsOrder": {
             "type": "array",
             "items": {
               "type": "string"
             },
-            "default": ["script", "template", "style"],
-            "description":
-              "Enable and adjust script, template, style panels’s layout order in the editor.",
+            "default": [
+              "script",
+              "template",
+              "style"
+            ],
+            "description": "Enable and adjust script, template, style panels’s layout order in the editor.",
             "scope": "resource"
           },
           "parallel.splitSingleFileComponentOnEditing": {
             "type": "boolean",
             "default": true,
-            "description":
-              "whether auto split templates/scripts/style tags in multiple columns view for a single-file component when open it.",
+            "description": "whether auto split templates/scripts/style tags in multiple columns view for a single-file component when open it.",
             "scope": "resource"
           },
           "parallel.singleFileComponentExts": {
@@ -165,8 +210,7 @@ npm manifest:
               "type": "string"
             },
             "default": [],
-            "description":
-              "[Case insensitive] A set of file extnames used for Single-file Component to enable split mode. built-in extnames: ['.vue', '.we', '.weex'].",
+            "description": "[Case insensitive] A set of file extnames used for Single-file Component to enable split mode. built-in extnames: ['.vue', '.we', '.weex'].",
             "scope": "resource"
           }
         }
@@ -181,22 +225,27 @@ npm manifest:
     },
     "devDependencies": {
       "@types/commondir": "^1.0.2",
-      "@types/jsdom": "^11.0.5",
+      "@types/jsdom": "^11.0.6",
       "@types/klaw-sync": "^2.0.1",
       "@types/lodash": "^4.14.107",
       "@types/micromatch": "^3.1.0",
+      "@types/mkdirp": "^0.5.2",
       "@types/mocha": "^5.2.0",
-      "@types/node": "^9.6.6",
+      "@types/node": "^10.0.0",
+      "@types/rimraf": "^2.0.2",
       "tslint": "^5.9.1",
       "typescript": "^2.8.3",
-      "vscode": "^1.1.14"
+      "vscode": "^1.1.16"
     },
     "dependencies": {
       "commondir": "^1.0.1",
       "jsdom": "^11.8.0",
+      "jsonc-parser": "^2.0.0",
       "klaw-sync": "^3.0.2",
-      "lodash": "^4.17.5",
-      "micromatch": "^3.1.10"
+      "lodash": "^4.17.10",
+      "micromatch": "^3.1.10",
+      "mkdirp": "^0.5.1",
+      "rimraf": "^2.6.2"
     }
   }
 
@@ -210,15 +259,27 @@ Lockfile:
   
   "@types/braces@*":
     version "2.3.0"
-    resolved "https://registry.npmjs.org/@types/braces/-/braces-2.3.0.tgz#d00ec0a76562b2acb6f29330be33a093e33ed25c"
+    resolved "https://npm.applinks.io:443/@types%2fbraces/-/braces-2.3.0.tgz#d00ec0a76562b2acb6f29330be33a093e33ed25c"
   
   "@types/commondir@^1.0.2":
     version "1.0.2"
     resolved "https://npm.applinks.io:443/@types%2fcommondir/-/commondir-1.0.2.tgz#ac577a1e60af26633b25aa054d7a0e03fbbdcb60"
   
-  "@types/jsdom@^11.0.5":
-    version "11.0.5"
-    resolved "https://npm.applinks.io:443/@types%2fjsdom/-/jsdom-11.0.5.tgz#2eaed698761f8cbdbf2d514b5e82ed26358bd6a5"
+  "@types/events@*":
+    version "1.2.0"
+    resolved "https://npm.applinks.io:443/@types%2fevents/-/events-1.2.0.tgz#81a6731ce4df43619e5c8c945383b3e62a89ea86"
+  
+  "@types/glob@*":
+    version "5.0.35"
+    resolved "https://npm.applinks.io:443/@types%2fglob/-/glob-5.0.35.tgz#1ae151c802cece940443b5ac246925c85189f32a"
+    dependencies:
+      "@types/events" "*"
+      "@types/minimatch" "*"
+      "@types/node" "*"
+  
+  "@types/jsdom@^11.0.6":
+    version "11.0.6"
+    resolved "https://npm.applinks.io:443/@types%2fjsdom/-/jsdom-11.0.6.tgz#97425d47e9be76ecb38daa509e2a09616076235d"
     dependencies:
       "@types/node" "*"
       "@types/tough-cookie" "*"
@@ -234,17 +295,38 @@ Lockfile:
   
   "@types/micromatch@^3.1.0":
     version "3.1.0"
-    resolved "https://registry.npmjs.org/@types/micromatch/-/micromatch-3.1.0.tgz#514c8a3d24b2680a9b838eeb80e6d7d724545433"
+    resolved "https://npm.applinks.io:443/@types%2fmicromatch/-/micromatch-3.1.0.tgz#514c8a3d24b2680a9b838eeb80e6d7d724545433"
     dependencies:
       "@types/braces" "*"
+  
+  "@types/minimatch@*":
+    version "3.0.3"
+    resolved "https://npm.applinks.io:443/@types%2fminimatch/-/minimatch-3.0.3.tgz#3dca0e3f33b200fc7d1139c0cd96c1268cadfd9d"
+  
+  "@types/mkdirp@^0.5.2":
+    version "0.5.2"
+    resolved "https://npm.applinks.io:443/@types%2fmkdirp/-/mkdirp-0.5.2.tgz#503aacfe5cc2703d5484326b1b27efa67a339c1f"
+    dependencies:
+      "@types/node" "*"
   
   "@types/mocha@^5.2.0":
     version "5.2.0"
     resolved "https://npm.applinks.io:443/@types%2fmocha/-/mocha-5.2.0.tgz#b3c8e69f038835db1a7fdc0b3d879fc50506e29e"
   
-  "@types/node@*", "@types/node@^9.6.6":
+  "@types/node@*":
     version "9.6.6"
     resolved "https://npm.applinks.io:443/@types%2fnode/-/node-9.6.6.tgz#439b91f9caf3983cad2eef1e11f6bedcbf9431d2"
+  
+  "@types/node@^10.0.0":
+    version "10.0.0"
+    resolved "https://npm.applinks.io:443/@types%2fnode/-/node-10.0.0.tgz#c40f8e07dce607d3ef25a626b93a6a7cdcf97881"
+  
+  "@types/rimraf@^2.0.2":
+    version "2.0.2"
+    resolved "https://npm.applinks.io:443/@types%2frimraf/-/rimraf-2.0.2.tgz#7f0fc3cf0ff0ad2a99bb723ae1764f30acaf8b6e"
+    dependencies:
+      "@types/glob" "*"
+      "@types/node" "*"
   
   "@types/tough-cookie@*":
     version "2.3.2"
@@ -518,6 +600,10 @@ Lockfile:
     version "0.2.13"
     resolved "http://139.196.216.117:4873/buffer-crc32/-/buffer-crc32-0.2.13.tgz#0d333e3f00eac50aa1454abd30ef8c2a5d9a7242"
   
+  buffer-from@^1.0.0:
+    version "1.0.0"
+    resolved "https://npm.applinks.io:443/buffer-from/-/buffer-from-1.0.0.tgz#4cb8832d23612589b0406e9e2956c17f06fdf531"
+  
   builtin-modules@^1.1.1:
     version "1.1.1"
     resolved "http://139.196.216.117:4873/builtin-modules/-/builtin-modules-1.1.1.tgz#270f076c5a72c02f5b65a47df94c5fe3a278892f"
@@ -593,7 +679,7 @@ Lockfile:
   
   clone@^2.1.1:
     version "2.1.2"
-    resolved "http://139.196.216.117:4873/clone/-/clone-2.1.2.tgz#1b7f4b9f591f1e8f83670401600345a02887435f"
+    resolved "https://npm.applinks.io:443/clone/-/clone-2.1.2.tgz#1b7f4b9f591f1e8f83670401600345a02887435f"
   
   cloneable-readable@^1.0.0:
     version "1.1.2"
@@ -636,7 +722,7 @@ Lockfile:
   
   commander@2.11.0:
     version "2.11.0"
-    resolved "http://139.196.216.117:4873/commander/-/commander-2.11.0.tgz#157152fd1e7a6c8d98a5b715cf376df928004563"
+    resolved "https://npm.applinks.io:443/commander/-/commander-2.11.0.tgz#157152fd1e7a6c8d98a5b715cf376df928004563"
   
   commander@^2.12.1, commander@^2.9.0:
     version "2.15.1"
@@ -708,7 +794,7 @@ Lockfile:
   
   debug@3.1.0:
     version "3.1.0"
-    resolved "http://139.196.216.117:4873/debug/-/debug-3.1.0.tgz#5bb5a0672628b64149566ba16819e61518c67261"
+    resolved "https://npm.applinks.io:443/debug/-/debug-3.1.0.tgz#5bb5a0672628b64149566ba16819e61518c67261"
     dependencies:
       ms "2.0.0"
   
@@ -757,7 +843,7 @@ Lockfile:
   
   diff@3.3.1:
     version "3.3.1"
-    resolved "http://139.196.216.117:4873/diff/-/diff-3.3.1.tgz#aa8567a6eed03c531fc89d3f711cd0e5259dec75"
+    resolved "https://npm.applinks.io:443/diff/-/diff-3.3.1.tgz#aa8567a6eed03c531fc89d3f711cd0e5259dec75"
   
   diff@^3.2.0:
     version "3.5.0"
@@ -1109,7 +1195,7 @@ Lockfile:
   
   growl@1.10.3:
     version "1.10.3"
-    resolved "http://139.196.216.117:4873/growl/-/growl-1.10.3.tgz#1926ba90cf3edfe2adb4927f5880bc22c66c790f"
+    resolved "https://npm.applinks.io:443/growl/-/growl-1.10.3.tgz#1926ba90cf3edfe2adb4927f5880bc22c66c790f"
   
   gulp-chmod@^2.0.0:
     version "2.0.0"
@@ -1121,7 +1207,7 @@ Lockfile:
   
   gulp-filter@^5.0.1:
     version "5.1.0"
-    resolved "http://139.196.216.117:4873/gulp-filter/-/gulp-filter-5.1.0.tgz#a05e11affb07cf7dcf41a7de1cb7b63ac3783e73"
+    resolved "https://npm.applinks.io:443/gulp-filter/-/gulp-filter-5.1.0.tgz#a05e11affb07cf7dcf41a7de1cb7b63ac3783e73"
     dependencies:
       multimatch "^2.0.0"
       plugin-error "^0.1.2"
@@ -1129,14 +1215,14 @@ Lockfile:
   
   gulp-gunzip@1.0.0:
     version "1.0.0"
-    resolved "http://139.196.216.117:4873/gulp-gunzip/-/gulp-gunzip-1.0.0.tgz#15b741145e83a9c6f50886241b57cc5871f151a9"
+    resolved "https://npm.applinks.io:443/gulp-gunzip/-/gulp-gunzip-1.0.0.tgz#15b741145e83a9c6f50886241b57cc5871f151a9"
     dependencies:
       through2 "~0.6.5"
       vinyl "~0.4.6"
   
   gulp-remote-src@^0.4.3:
     version "0.4.3"
-    resolved "http://139.196.216.117:4873/gulp-remote-src/-/gulp-remote-src-0.4.3.tgz#5728cfd643433dd4845ddef0969f0f971a2ab4a1"
+    resolved "https://npm.applinks.io:443/gulp-remote-src/-/gulp-remote-src-0.4.3.tgz#5728cfd643433dd4845ddef0969f0f971a2ab4a1"
     dependencies:
       event-stream "~3.3.4"
       node.extend "~1.1.2"
@@ -1198,7 +1284,7 @@ Lockfile:
   
   gulp-vinyl-zip@^2.1.0:
     version "2.1.0"
-    resolved "http://139.196.216.117:4873/gulp-vinyl-zip/-/gulp-vinyl-zip-2.1.0.tgz#24e40685dc05b7149995245099e0590263be8dad"
+    resolved "https://npm.applinks.io:443/gulp-vinyl-zip/-/gulp-vinyl-zip-2.1.0.tgz#24e40685dc05b7149995245099e0590263be8dad"
     dependencies:
       event-stream "^3.3.1"
       queue "^4.2.1"
@@ -1242,7 +1328,7 @@ Lockfile:
   
   has-flag@^2.0.0:
     version "2.0.0"
-    resolved "http://139.196.216.117:4873/has-flag/-/has-flag-2.0.0.tgz#e8207af1cc7b30d446cc70b734b5e8be18f88d51"
+    resolved "https://npm.applinks.io:443/has-flag/-/has-flag-2.0.0.tgz#e8207af1cc7b30d446cc70b734b5e8be18f88d51"
   
   has-flag@^3.0.0:
     version "3.0.0"
@@ -1600,6 +1686,10 @@ Lockfile:
     version "5.0.1"
     resolved "http://139.196.216.117:4873/json-stringify-safe/-/json-stringify-safe-5.0.1.tgz#1296a2d58fd45f19a0f6ce01d65701e2c735b6eb"
   
+  jsonc-parser@^2.0.0:
+    version "2.0.0"
+    resolved "https://npm.applinks.io:443/jsonc-parser/-/jsonc-parser-2.0.0.tgz#62ff087a7e753875febf3c55f1fc0cd737c36b5a"
+  
   jsonify@~0.0.0:
     version "0.0.0"
     resolved "http://139.196.216.117:4873/jsonify/-/jsonify-0.0.0.tgz#2c74b6ee41d93ca51b7b5aaee8f503631d252a73"
@@ -1755,9 +1845,13 @@ Lockfile:
       lodash._reinterpolate "^3.0.0"
       lodash.escape "^3.0.0"
   
-  lodash@^4.13.1, lodash@^4.17.5:
+  lodash@^4.13.1:
     version "4.17.5"
     resolved "http://139.196.216.117:4873/lodash/-/lodash-4.17.5.tgz#99a92d65c0272debe8c96b6057bc8fbfa3bed511"
+  
+  lodash@^4.17.10:
+    version "4.17.10"
+    resolved "https://npm.applinks.io:443/lodash/-/lodash-4.17.10.tgz#1b7793cf7259ea38fb3661d4d38b3260af8ae4e7"
   
   map-cache@^0.2.2:
     version "0.2.2"
@@ -1848,13 +1942,13 @@ Lockfile:
   
   mkdirp@0.5.1, "mkdirp@>=0.5 0", mkdirp@^0.5.0, mkdirp@^0.5.1:
     version "0.5.1"
-    resolved "http://139.196.216.117:4873/mkdirp/-/mkdirp-0.5.1.tgz#30057438eac6cf7f8c4767f38648d6697d75c903"
+    resolved "https://npm.applinks.io:443/mkdirp/-/mkdirp-0.5.1.tgz#30057438eac6cf7f8c4767f38648d6697d75c903"
     dependencies:
       minimist "0.0.8"
   
   mocha@^4.0.1:
     version "4.1.0"
-    resolved "http://139.196.216.117:4873/mocha/-/mocha-4.1.0.tgz#7d86cfbcf35cb829e2754c32e17355ec05338794"
+    resolved "https://npm.applinks.io:443/mocha/-/mocha-4.1.0.tgz#7d86cfbcf35cb829e2754c32e17355ec05338794"
     dependencies:
       browser-stdout "1.3.0"
       commander "2.11.0"
@@ -2099,7 +2193,7 @@ Lockfile:
   
   queue@^4.2.1:
     version "4.4.2"
-    resolved "http://139.196.216.117:4873/queue/-/queue-4.4.2.tgz#5a9733d9a8b8bd1b36e934bc9c55ab89b28e29c7"
+    resolved "https://npm.applinks.io:443/queue/-/queue-4.4.2.tgz#5a9733d9a8b8bd1b36e934bc9c55ab89b28e29c7"
     dependencies:
       inherits "~2.0.0"
   
@@ -2257,9 +2351,9 @@ Lockfile:
     version "0.1.15"
     resolved "http://139.196.216.117:4873/ret/-/ret-0.1.15.tgz#b8a4825d5bdb1fc3f6f53c2bc33f81388681c7bc"
   
-  rimraf@2:
+  rimraf@2, rimraf@^2.6.2:
     version "2.6.2"
-    resolved "http://139.196.216.117:4873/rimraf/-/rimraf-2.6.2.tgz#2ed8150d24a16ea8651e6d6ef0f47c4158ce7a36"
+    resolved "https://npm.applinks.io:443/rimraf/-/rimraf-2.6.2.tgz#2ed8150d24a16ea8651e6d6ef0f47c4158ce7a36"
     dependencies:
       glob "^7.0.5"
   
@@ -2349,9 +2443,10 @@ Lockfile:
       urix "^0.1.0"
   
   source-map-support@^0.5.0:
-    version "0.5.4"
-    resolved "http://139.196.216.117:4873/source-map-support/-/source-map-support-0.5.4.tgz#54456efa89caa9270af7cd624cc2f123e51fbae8"
+    version "0.5.5"
+    resolved "https://npm.applinks.io:443/source-map-support/-/source-map-support-0.5.5.tgz#0d4af9e00493e855402e8ec36ebed2d266fceb90"
     dependencies:
+      buffer-from "^1.0.0"
       source-map "^0.6.0"
   
   source-map-url@^0.4.0:
@@ -2470,7 +2565,7 @@ Lockfile:
   
   supports-color@4.4.0:
     version "4.4.0"
-    resolved "http://139.196.216.117:4873/supports-color/-/supports-color-4.4.0.tgz#883f7ddabc165142b2a61427f3352ded195d1a3e"
+    resolved "https://npm.applinks.io:443/supports-color/-/supports-color-4.4.0.tgz#883f7ddabc165142b2a61427f3352ded195d1a3e"
     dependencies:
       has-flag "^2.0.0"
   
@@ -2730,7 +2825,7 @@ Lockfile:
   
   vinyl@^2.0.2:
     version "2.1.0"
-    resolved "http://139.196.216.117:4873/vinyl/-/vinyl-2.1.0.tgz#021f9c2cf951d6b939943c89eb5ee5add4fd924c"
+    resolved "https://npm.applinks.io:443/vinyl/-/vinyl-2.1.0.tgz#021f9c2cf951d6b939943c89eb5ee5add4fd924c"
     dependencies:
       clone "^2.1.1"
       clone-buffer "^1.0.0"
@@ -2751,9 +2846,9 @@ Lockfile:
       remove-trailing-separator "^1.0.1"
       replace-ext "^1.0.0"
   
-  vscode@^1.1.14:
-    version "1.1.14"
-    resolved "https://npm.applinks.io:443/vscode/-/vscode-1.1.14.tgz#f327f5fd45c085d12def616962af205b2bc75db5"
+  vscode@^1.1.16:
+    version "1.1.16"
+    resolved "https://npm.applinks.io:443/vscode/-/vscode-1.1.16.tgz#2eb2c76bff39b364597968a3a71c6ad2b902298c"
     dependencies:
       glob "^7.1.2"
       gulp-chmod "^2.0.0"
@@ -2835,5 +2930,14 @@ Lockfile:
       buffer-crc32 "~0.2.3"
 
 Trace: 
-  Error: read ETIMEDOUT
-      at TLSWrap.onread (net.js:602:25)
+  Error: https://npm.applinks.io/@types%2fjsonc-parser: no such package available
+      at Request.params.callback [as _callback] (/usr/local/lib/node_modules/yarn/lib/cli.js:62027:18)
+      at Request.self.callback (/usr/local/lib/node_modules/yarn/lib/cli.js:123011:22)
+      at Request.emit (events.js:180:13)
+      at Request.<anonymous> (/usr/local/lib/node_modules/yarn/lib/cli.js:123994:10)
+      at Request.emit (events.js:180:13)
+      at IncomingMessage.<anonymous> (/usr/local/lib/node_modules/yarn/lib/cli.js:123914:12)
+      at Object.onceWrapper (events.js:272:13)
+      at IncomingMessage.emit (events.js:185:15)
+      at endReadableNT (_stream_readable.js:1106:12)
+      at process._tickCallback (internal/process/next_tick.js:178:19)
