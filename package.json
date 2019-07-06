@@ -3,7 +3,7 @@
   "displayName": "Parallel Space -FE Components Editor",
   "icon": "resources/icons/dark/icon.png",
   "description": "Edit component’s parts(tamplate/script/style) use multi columns layout looks like CodePen/JSFiddle/JSBin, used for Angular components, Vue TypeScript components, Vue SFC(single-file component) or other mvc/mvvm components which itself’s templates/scripts/styles parts each as standalone file or as Single-file.",
-  "version": "3.0.3",
+  "version": "3.0.4",
   "publisher": "ColinLuo",
   "author": "Colin Luo <mail@luozhihua.com>",
   "license": "MIT",
@@ -30,19 +30,24 @@
   "main": "./out/extension",
   "contributes": {
     "viewsContainers": {
-      "activitybar": [{
-        "id": "parallelExplorer",
-        "title": "Parallel Space",
-        "icon": "resources/icons/icon.svg"
-      }]
+      "activitybar": [
+        {
+          "id": "parallelExplorer",
+          "title": "Parallel Space",
+          "icon": "resources/icons/icon.svg"
+        }
+      ]
     },
     "views": {
-      "parallelExplorer": [{
-        "id": "parallelExplorer",
-        "name": "Parallel Space"
-      }]
+      "parallelExplorer": [
+        {
+          "id": "parallelExplorer",
+          "name": "Parallel Space"
+        }
+      ]
     },
-    "commands": [{
+    "commands": [
+      {
         "command": "parallel.enable",
         "title": "%parallelspace.enable%",
         "category": "Parallel",
@@ -80,28 +85,38 @@
       }
     ],
     "menus": {
-      "editor/title": [{
-        "command": "parallel.spreadCurrentDocument",
-        "group": "navigation"
-      }],
-      "editor/context": [{
-        "command": "parallel.spreadCurrentDocument",
-        "group": "navigation"
-      }],
-      "explorer/context": [{
-        "command": "parallel.explorer.open",
-        "when": "resourceIsFile",
-        "group": "navigation@100"
-      }],
-      "view/title": [{
-        "command": "parallel.explorer.refresh",
-        "when": "view == parallelExplorer",
-        "group": "navigation"
-      }],
-      "view/item/context": [{
-        "command": "parallel.explorer.open",
-        "when": "view == parallelExplorer && viewItem == parallel.item.component"
-      }]
+      "editor/title": [
+        {
+          "command": "parallel.spreadCurrentDocument",
+          "group": "navigation"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "parallel.spreadCurrentDocument",
+          "group": "navigation"
+        }
+      ],
+      "explorer/context": [
+        {
+          "command": "parallel.explorer.open",
+          "when": "resourceIsFile",
+          "group": "navigation@100"
+        }
+      ],
+      "view/title": [
+        {
+          "command": "parallel.explorer.refresh",
+          "when": "view == parallelExplorer",
+          "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "parallel.explorer.open",
+          "when": "view == parallelExplorer && viewItem == parallel.item.component"
+        }
+      ]
     },
     "configuration": {
       "type": "object",
